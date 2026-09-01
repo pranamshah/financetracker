@@ -3,15 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api.js'
 import { useAutoRefresh } from '../../lib/useAutoRefresh.js'
 
-export default function Customers() {
+export default function Customers({ scopeId }) {
   const [all, setAll] = useState([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  const load = () => api.customers().then(setAll).catch(() => setAll([])).finally(() => setLoading(false))
+  // scopeId null = admin "All" (every customer); otherwise only this person's own.
+  const load = () =>
+    api.customers({ memberId: scopeId }).then(setAll).catch(() => setAll([])).finally(() => setLoading(false))
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [scopeId])
   // Refresh the customer list when returning to the tab (new customers added elsewhere).
   useAutoRefresh(load, { intervalMs: 0 })
 

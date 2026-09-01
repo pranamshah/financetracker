@@ -18,7 +18,13 @@ export const api = {
   login: (username) => req('login', { method: 'POST', body: JSON.stringify({ username }) }),
   members: () => req('members'),
 
-  customers: (search) => req(`customers${search ? `?search=${encodeURIComponent(search)}` : ''}`),
+  customers: ({ search, memberId } = {}) => {
+    const p = new URLSearchParams()
+    if (search) p.set('search', search)
+    if (memberId) p.set('member_id', memberId)
+    const qs = p.toString()
+    return req(`customers${qs ? `?${qs}` : ''}`)
+  },
   customer: (id) => req(`customers?id=${id}`),
   createCustomer: (body) => req('customers', { method: 'POST', body: JSON.stringify(body) }),
 

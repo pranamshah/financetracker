@@ -88,7 +88,7 @@ function NewEntryModal({ onClose, onSaved }) {
   useEffect(() => {
     if (customer || search.trim().length < 1) { setResults([]); return }
     const t = setTimeout(() => {
-      api.customers(search).then(setResults).catch(() => setResults([]))
+      api.customers({ search }).then(setResults).catch(() => setResults([]))
     }, 250)
     return () => clearTimeout(t)
   }, [search, customer])

@@ -10,17 +10,22 @@ export default async function handler(req, res) {
       const { id, search } = req.query
       if (id) return send(res, 200, await getDetail(id))
 
+      // member_id scopes the list to that person's own customers (admin omits
+      // it -> sees everyone). "Own" = added by them, or they collected on /
+      // created a loan for that customer.
+      const member_id = req.query.member_id || null
       const term = search ? `%${search.toLowerCase()}%` : null
-      const rows = term
-        ? await sql`
-            select c.id, c.name, c.phone, c.address, c.added_by
-            from customers c
-            where lower(c.name) like ${term}
-            order by c.name asc`
-        : await sql`
-            select c.id, c.name, c.phone, c.address, c.added_by
-            from customers c
-            order by c.name asc`
+      const rows = await sql`
+        select c.id, c.name, c.phone, c.address, c.added_by
+        from customers c
+        where (${term}::text is null or lower(c.name) like ${term})
+          and (
+            ${member_id}::uuid is null
+            or c.added_by = ${member_id}::uuid
+            or exists (select 1 from entries e where e.customer_id = c.id and e.member_id = ${member_id}::uuid)
+            or exists (select 1 from loans l where l.customer_id = c.id and l.created_by = ${member_id}::uuid)
+          )
+        order by c.name asc`
       return send(res, 200, rows)
     }
 
