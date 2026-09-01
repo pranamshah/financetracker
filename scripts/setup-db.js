@@ -4,7 +4,10 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import 'dotenv/config'
-import { neon } from '@neondatabase/serverless'
+import { Pool, neonConfig } from '@neondatabase/serverless'
+
+// Node has a global WebSocket (v22+); the driver needs it for the Pool.
+neonConfig.webSocketConstructor = globalThis.WebSocket
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -13,12 +16,13 @@ if (!process.env.DATABASE_URL) {
   process.exit(1)
 }
 
-const sql = neon(process.env.DATABASE_URL)
+const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 
 async function runFile(name) {
   const text = readFileSync(join(__dirname, '..', 'db', name), 'utf8')
   console.log(`Running ${name} ...`)
-  await sql.query(text)
+  // A simple (non-parameterized) query runs the whole multi-statement script.
+  await pool.query(text)
   console.log(`  done: ${name}`)
 }
 
@@ -28,7 +32,9 @@ const run = async () => {
   console.log('Database setup complete.')
 }
 
-run().catch((e) => {
-  console.error(e)
-  process.exit(1)
-})
+run()
+  .catch((e) => {
+    console.error(e)
+    process.exitCode = 1
+  })
+  .finally(() => pool.end())
