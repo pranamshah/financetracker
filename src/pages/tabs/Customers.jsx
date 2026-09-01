@@ -55,7 +55,7 @@ export default function Customers({ scopeId }) {
               <li key={c.id}>
                 <button
                   onClick={() => navigate(`/customer/${c.id}`)}
-                  className="w-full text-left rounded-xl bg-white border border-slate-200 px-4 py-3 flex items-center justify-between active:scale-[0.99] transition"
+                  className="w-full text-left card px-4 py-3 flex items-center justify-between active:scale-[0.99] transition"
                 >
                   <div>
                     <p className="font-semibold text-slate-800">{c.name}</p>

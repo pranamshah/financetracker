@@ -45,7 +45,7 @@ export default function CustomerDetail() {
 
       <div className="px-4 py-4 space-y-5">
         {/* Basic info */}
-        <div className="rounded-xl bg-white border border-slate-200 p-4 space-y-1 text-sm">
+        <div className="card p-4 space-y-1 text-sm">
           {customer.phone && <p><span className="text-slate-400">Phone: </span>{customer.phone}</p>}
           {customer.address && <p><span className="text-slate-400">Address: </span>{customer.address}</p>}
           {!customer.phone && !customer.address && <p className="text-slate-400">No contact details</p>}
@@ -69,7 +69,7 @@ export default function CustomerDetail() {
             {loans.map((l) => {
               const bal = Number(l.total_to_receive) - Number(l.collected)
               return (
-                <li key={l.id} className="rounded-xl bg-white border border-slate-200 p-4">
+                <li key={l.id} className="card p-4">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-semibold">₹{fmt(l.amount_given)} <span className="text-slate-400 font-normal">given</span></p>
@@ -97,7 +97,7 @@ export default function CustomerDetail() {
           {entries.length === 0 && <p className="text-slate-400 text-sm">No collections yet</p>}
           <ul className="space-y-2">
             {entries.map((e) => (
-              <li key={e.id} className="rounded-xl bg-white border border-slate-200 px-4 py-2.5 flex justify-between items-center">
+              <li key={e.id} className="card px-4 py-2.5 flex justify-between items-center">
                 <div>
                   <p className="text-sm font-medium">{new Date(e.entry_date).toLocaleDateString()}</p>
                   <p className="text-xs text-slate-400">{e.member_name || ''}{e.note ? ` · ${e.note}` : ''}</p>
@@ -131,7 +131,7 @@ export default function CustomerDetail() {
 function Mini({ label, value, tone }) {
   const color = tone === 'in' ? 'text-money-in' : tone === 'out' ? 'text-money-out' : 'text-slate-800'
   return (
-    <div className="rounded-xl bg-white border border-slate-200 p-3 text-center">
+    <div className="card p-3 text-center">
       <p className="text-[10px] font-medium text-slate-400">{label}</p>
       <p className={`text-sm font-bold ${color}`}>{value}</p>
     </div>

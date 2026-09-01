@@ -6,11 +6,37 @@ html, body, #root { height: 100%; }
 body {
   margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  background: #f8fafc;
+  background: #f1f5f9;
   color: #0f172a;
   -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+/* No text selection / callout on tap targets — feels more app-like */
+button, a, nav { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
 /* Safe-area padding for iPhone notch / home indicator */
 .safe-top { padding-top: env(safe-area-inset-top); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Consistent press feedback */
+button:active { transform: scale(0.98); }
+
+@layer components {
+  .card {
+    @apply rounded-2xl bg-white border border-slate-100 shadow-sm;
+  }
+  .btn-primary {
+    @apply rounded-xl bg-money-in text-white font-semibold py-3.5 shadow-sm
+           active:brightness-95 disabled:opacity-50 transition;
+  }
+  .field {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5
+           outline-none focus:border-money-in focus:ring-2 focus:ring-green-100 transition;
+  }
+}
+
+/* Simple fade-in for lists/screens */
+@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.animate-in { animation: fade-in .18s ease-out; }

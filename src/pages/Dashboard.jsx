@@ -33,21 +33,26 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-full pb-20 max-w-lg mx-auto">
-      <header className="safe-top sticky top-0 bg-white/90 backdrop-blur border-b border-slate-200 z-10">
+      <header className="safe-top sticky top-0 bg-white/90 backdrop-blur border-b border-slate-100 z-10">
         <div className="px-4 py-3 flex items-center justify-between gap-2">
-          <div>
-            <h1 className="font-bold text-lg leading-tight">{titles[tab]}</h1>
-            <p className="text-xs text-slate-400">
-              {session.name}{isAdmin ? ' · Admin' : ''}
-            </p>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-white font-bold ${isAdmin ? 'bg-amber-500' : 'bg-money-in'}`}>
+              {session.name?.[0]?.toUpperCase() || '?'}
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-bold text-lg leading-tight truncate">{titles[tab]}</h1>
+              <p className="text-xs text-slate-400 truncate">
+                {session.name}{isAdmin ? ' · Admin' : ''}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {isAdmin && tab !== 'new' && (
               <MemberFilter members={members} value={filter} onChange={setFilter} />
             )}
             <button
               onClick={switchUser}
-              className="text-xs font-medium text-slate-500 border border-slate-300 rounded-lg px-2.5 py-1.5"
+              className="text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg px-2.5 py-1.5 active:bg-slate-50"
             >
               Log out
             </button>
@@ -55,7 +60,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="px-4 py-4">
+      <main className="px-4 py-4 animate-in">
         {tab === 'entries' && <DailyEntries scopeId={scopeId} />}
         {tab === 'customers' && <Customers scopeId={scopeId} isAdmin={isAdmin} />}
         {tab === 'new' && <NewTab onDone={() => setTab('customers')} />}

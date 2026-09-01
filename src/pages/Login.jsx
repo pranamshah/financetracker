@@ -26,11 +26,12 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-full safe-top px-5 flex flex-col justify-center max-w-sm mx-auto">
+    <div className="min-h-full flex flex-col justify-center px-6 max-w-sm mx-auto animate-in"
+         style={{ background: 'radial-gradient(120% 60% at 50% 0%, #dcfce7 0%, #f1f5f9 55%)' }}>
       <div className="text-center mb-8">
-        <div className="mx-auto mb-4 h-16 w-16 rounded-2xl bg-money-in flex items-center justify-center text-white text-3xl font-bold">₹</div>
-        <h1 className="text-2xl font-bold text-money-in">Finance Tracker</h1>
-        <p className="text-slate-500 mt-1">Enter your username to continue</p>
+        <div className="mx-auto mb-5 h-20 w-20 rounded-3xl bg-money-in flex items-center justify-center text-white text-4xl font-bold shadow-lg shadow-green-200">₹</div>
+        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Finance Tracker</h1>
+        <p className="text-slate-500 mt-2">Enter your username to continue</p>
       </div>
 
       <form onSubmit={submit} className="space-y-3">
@@ -41,17 +42,15 @@ export default function Login() {
           autoCapitalize="none"
           autoCorrect="off"
           autoComplete="username"
-          className="w-full rounded-xl border border-slate-300 px-4 py-3.5 text-lg outline-none focus:border-money-in"
+          className="field text-lg text-center"
         />
-        {error && <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-xl bg-money-in text-white text-lg font-semibold py-3.5 disabled:opacity-50 active:scale-[0.99] transition"
-        >
+        {error && <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2 text-center">{error}</p>}
+        <button type="submit" disabled={busy} className="btn-primary w-full text-lg">
           {busy ? 'Checking…' : 'Continue'}
         </button>
       </form>
+
+      <p className="text-center text-xs text-slate-400 mt-8">Trusted internal use · no password needed</p>
     </div>
   )
 }

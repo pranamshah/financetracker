@@ -86,7 +86,7 @@ export default function Summary({ scopeId }) {
 function Stat({ label, value, tone }) {
   const color = tone === 'in' ? 'text-money-in' : tone === 'out' ? 'text-money-out' : 'text-slate-800'
   return (
-    <div className="rounded-xl bg-white border border-slate-200 p-4">
+    <div className="card p-4">
       <p className="text-xs font-medium text-slate-500">{label}</p>
       <p className={`text-xl font-bold ${color}`}>{value}</p>
     </div>

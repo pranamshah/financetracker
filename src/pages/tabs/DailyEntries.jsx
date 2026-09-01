@@ -40,7 +40,7 @@ export default function DailyEntries({ scopeId }) {
 
       <ul className="space-y-2">
         {entries.map((e) => (
-          <li key={e.id} className="rounded-xl bg-white border border-slate-200 px-4 py-3 flex items-center justify-between">
+          <li key={e.id} className="card px-4 py-3 flex items-center justify-between">
             <div>
               <p className="font-semibold text-slate-800">{e.customer_name}</p>
               <p className="text-xs text-slate-400">
