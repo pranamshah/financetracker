@@ -33,7 +33,7 @@ export default function Members({ onOpenMember }) {
             </p>
             <p className="text-xs text-slate-400">{m.customers} customers</p>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0 whitespace-nowrap">
             <p className="font-bold text-money-in">₹{fmt(m.today_collected)}</p>
             <p className="text-xs text-slate-400">{m.today_entries} today</p>
           </div>

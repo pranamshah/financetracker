@@ -40,15 +40,15 @@ export default function DailyEntries({ scopeId }) {
 
       <ul className="space-y-2">
         {entries.map((e) => (
-          <li key={e.id} className="card px-4 py-3 flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-slate-800">{e.customer_name}</p>
-              <p className="text-xs text-slate-400">
+          <li key={e.id} className="card px-4 py-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-semibold text-slate-800 truncate">{e.customer_name}</p>
+              <p className="text-xs text-slate-400 truncate">
                 {new Date(e.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 {e.member_name ? ` · ${e.member_name}` : ''}
               </p>
             </div>
-            <span className="font-bold text-money-in">+₹{fmt(e.amount)}</span>
+            <span className="font-bold text-money-in shrink-0 whitespace-nowrap">+₹{fmt(e.amount)}</span>
           </li>
         ))}
       </ul>
