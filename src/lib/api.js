@@ -41,6 +41,7 @@ export const api = {
     return req(`entries${qs ? `?${qs}` : ''}`)
   },
   createEntry: (body) => req('entries', { method: 'POST', body: JSON.stringify(body) }),
+  collect: (body) => req('collect', { method: 'POST', body: JSON.stringify(body) }),
 
   summary: ({ range = 'today', memberId } = {}) => {
     const p = new URLSearchParams({ range })

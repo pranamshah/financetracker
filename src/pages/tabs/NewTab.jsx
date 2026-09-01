@@ -11,7 +11,6 @@ export default function NewTab({ onDone }) {
   const [customer, setCustomer] = useState(null)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [address, setAddress] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -23,7 +22,7 @@ export default function NewTab({ onDone }) {
     setSaving(true)
     try {
       const c = await api.createCustomer({
-        name, phone: phone || null, address: address || null, added_by: session.id
+        name, phone: phone || null, added_by: session.id
       })
       setCustomer(c)
       setStep('ask')
@@ -40,7 +39,6 @@ export default function NewTab({ onDone }) {
         <h2 className="font-bold text-slate-700">New Customer</h2>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name *" className={field} />
         <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone (optional)" inputMode="tel" className={field} />
-        <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address (optional)" rows={2} className={field} />
         {error && <p className="text-red-600 text-sm">{error}</p>}
         <button onClick={saveCustomer} disabled={saving}
           className="w-full rounded-xl bg-money-in text-white font-semibold py-3.5 disabled:opacity-50">

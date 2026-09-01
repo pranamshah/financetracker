@@ -74,6 +74,35 @@ export function customerHistoryPdf({ customer, loans, entries }) {
   save(doc, `${safe(customer.name)}_History.pdf`)
 }
 
+// ---- Single loan history --------------------------------------------------
+export function loanHistoryPdf({ customer, loan, entries, index = 1 }) {
+  const doc = baseDoc()
+  let y = 48
+  doc.text('Loan History', 40, y)
+  doc.setFont('helvetica', 'normal').setFontSize(10)
+  y += 18
+  doc.text(`Customer: ${customer.name}`, 40, y); y += 14
+  doc.text(`Generated: ${today()}`, 40, y)
+
+  const collected = Number(loan.collected ?? 0)
+  const balance = Number(loan.total_to_receive) - collected
+  autoTable(doc, {
+    ...tableStyle, startY: y + 8,
+    head: [['Given', 'Interest', 'Total', 'Collected', 'Balance', 'Start']],
+    body: [[rs(loan.amount_given), rs(loan.interest_amount), rs(loan.total_to_receive),
+            rs(collected), rs(balance), d(loan.start_date)]]
+  })
+  y = doc.lastAutoTable.finalY
+  const rows = entries.filter((e) => e.loan_id === loan.id)
+    .map((e) => [d(e.entry_date), rs(e.amount), e.member_name || '', e.note || ''])
+  autoTable(doc, {
+    ...tableStyle, startY: y + 4,
+    head: [['Date', 'Amount', 'Collected by', 'Note']],
+    body: rows.length ? rows : [['—', 'No collections', '', '']]
+  })
+  save(doc, `${safe(customer.name)}_Loan${index}.pdf`)
+}
+
 // ---- Period report (Daily / Weekly / Monthly) ----------------------------
 // Grouped by customer (alphabetical); under each customer, each loan with its
 // entries for the period and a subtotal. Grand totals at the end.

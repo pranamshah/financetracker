@@ -24,6 +24,20 @@ export function computeLoan({ amountGiven, interestAmount, tenureDays, frequency
   }
 }
 
+// When the user enters the total amount to be received directly (instead of
+// interest): interest is derived, and the per-installment ("daily") amount too.
+export function computeFromTotal({ amountGiven, totalToReceive, tenureDays, frequency }) {
+  const given = Number(amountGiven) || 0
+  const total = Number(totalToReceive) || 0
+  const count = installmentCount(tenureDays, frequency)
+  return {
+    interest_amount: total - given,
+    total_to_receive: total,
+    installment_count: count,
+    installment_amount: count > 0 ? total / count : 0
+  }
+}
+
 const money = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 })
 export function fmt(n) {
   return money.format(Number(n) || 0)
