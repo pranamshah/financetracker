@@ -1,0 +1,8 @@
+{
+  "appId": "com.pranamshah.financetracker",
+  "appName": "Finance Tracker",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  }
+}

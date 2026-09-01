@@ -6,5 +6,9 @@ dist-ssr
 .env*.local
 .vercel
 .DS_Store
+
+# Capacitor native project — generated locally by `npm run android:add`
+/android
+/ios
 npm-debug.log*
 yarn-error.log*

@@ -1,6 +1,11 @@
 // Tiny fetch wrapper around the /api serverless endpoints.
+// On the website this is empty (relative /api). In the Android APK the web
+// assets load from file://, so set VITE_API_BASE to the deployed Vercel URL
+// (e.g. https://your-app.vercel.app) at build time so it can reach the API.
+const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '')
+
 async function req(path, options = {}) {
-  const res = await fetch(`/api/${path}`, {
+  const res = await fetch(`${BASE}/api/${path}`, {
     headers: { 'Content-Type': 'application/json' },
     ...options
   })
