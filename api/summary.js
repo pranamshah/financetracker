@@ -1,0 +1,48 @@
+import { sql, send } from './_db.js'
+
+// GET /api/summary?range=today|week|month&employee_id=<uuid>
+// Returns collected (inflow), given (outflow), net, entry_count, new_customers.
+export default async function handler(req, res) {
+  try {
+    if (req.method !== 'GET') return send(res, 405, { error: 'Method not allowed' })
+    const range = req.query.range || 'today'
+    const employee_id = req.query.employee_id || null
+
+    const startExpr = {
+      today: sql`current_date`,
+      week: sql`date_trunc('week', current_date)`,
+      month: sql`date_trunc('month', current_date)`
+    }[range] || sql`current_date`
+
+    const inflow = (await sql`
+      select coalesce(sum(amount),0) as total, count(*) as cnt
+      from entries
+      where entry_date >= ${startExpr}
+        and (${employee_id}::uuid is null or employee_id = ${employee_id}::uuid)`)[0]
+
+    const outflow = (await sql`
+      select coalesce(sum(amount_given),0) as total
+      from loans
+      where start_date >= ${startExpr}
+        and (${employee_id}::uuid is null or created_by = ${employee_id}::uuid)`)[0]
+
+    const newCust = (await sql`
+      select count(*) as cnt
+      from customers
+      where created_at >= ${startExpr}
+        and (${employee_id}::uuid is null or added_by = ${employee_id}::uuid)`)[0]
+
+    const collected = Number(inflow.total)
+    const given = Number(outflow.total)
+    return send(res, 200, {
+      range,
+      collected,
+      given,
+      net: collected - given,
+      entry_count: Number(inflow.cnt),
+      new_customers: Number(newCust.cnt)
+    })
+  } catch (e) {
+    return send(res, 500, { error: e.message })
+  }
+}

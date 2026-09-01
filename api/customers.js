@@ -1,0 +1,64 @@
+import { sql, send, readBody } from './_db.js'
+
+// GET  /api/customers                 -> list all (with balance summary)
+// GET  /api/customers?id=<uuid>       -> single customer + loans + entries
+// GET  /api/customers?search=<text>   -> filtered list
+// POST /api/customers                 -> create { name, phone, address, added_by }
+export default async function handler(req, res) {
+  try {
+    if (req.method === 'GET') {
+      const { id, search } = req.query
+      if (id) return send(res, 200, await getDetail(id))
+
+      const term = search ? `%${search.toLowerCase()}%` : null
+      const rows = term
+        ? await sql`
+            select c.id, c.name, c.phone, c.address, c.added_by
+            from customers c
+            where lower(c.name) like ${term}
+            order by c.name asc`
+        : await sql`
+            select c.id, c.name, c.phone, c.address, c.added_by
+            from customers c
+            order by c.name asc`
+      return send(res, 200, rows)
+    }
+
+    if (req.method === 'POST') {
+      const { name, phone, address, added_by } = await readBody(req)
+      if (!name || !name.trim()) return send(res, 400, { error: 'name is required' })
+      const rows = await sql`
+        insert into customers (name, phone, address, added_by)
+        values (${name.trim()}, ${phone || null}, ${address || null}, ${added_by || null})
+        returning id, name, phone, address, added_by`
+      return send(res, 201, rows[0])
+    }
+
+    return send(res, 405, { error: 'Method not allowed' })
+  } catch (e) {
+    return send(res, 500, { error: e.message })
+  }
+}
+
+async function getDetail(id) {
+  const customer = (await sql`
+    select id, name, phone, address, added_by from customers where id = ${id}`)[0]
+  if (!customer) return { error: 'not found' }
+
+  const loans = await sql`
+    select l.*,
+      coalesce((select sum(e.amount) from entries e where e.loan_id = l.id), 0) as collected
+    from loans l
+    where l.customer_id = ${id}
+    order by l.created_at desc`
+
+  const entries = await sql`
+    select e.id, e.loan_id, e.amount, e.entry_date, e.note, e.employee_id,
+           emp.name as employee_name
+    from entries e
+    left join employees emp on emp.id = e.employee_id
+    where e.customer_id = ${id}
+    order by e.entry_date desc, e.created_at desc`
+
+  return { customer, loans, entries }
+}
