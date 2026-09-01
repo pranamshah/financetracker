@@ -66,16 +66,26 @@ function QuickEntry({ onSaved }) {
   const [amount, setAmount] = useState('')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
+  const [allCustomers, setAllCustomers] = useState([])
   const nameRef = useRef(null)
   const amountRef = useRef(null)
 
+  // Load the customer list once, then filter locally so suggestions appear
+  // instantly on every keystroke.
+  useEffect(() => { api.customers().then(setAllCustomers).catch(() => {}) }, [])
+
   useEffect(() => {
-    if (customer || search.trim().length < 1) { setResults([]); return }
-    const t = setTimeout(() => {
-      api.customers(search).then(setResults).catch(() => setResults([]))
-    }, 200)
-    return () => clearTimeout(t)
-  }, [search, customer])
+    const q = search.trim().toLowerCase()
+    if (customer || !q) { setResults([]); return }
+    const matches = allCustomers.filter((c) => c.name.toLowerCase().includes(q))
+    // Names that START with the typed text come first.
+    matches.sort((a, b) => {
+      const as = a.name.toLowerCase().startsWith(q) ? 0 : 1
+      const bs = b.name.toLowerCase().startsWith(q) ? 0 : 1
+      return as - bs || a.name.localeCompare(b.name)
+    })
+    setResults(matches.slice(0, 8))
+  }, [search, customer, allCustomers])
 
   const pick = (c) => {
     setCustomer(c)
@@ -116,19 +126,19 @@ function QuickEntry({ onSaved }) {
 
   return (
     <div className="card p-3 mb-3">
-      <div className="flex items-center gap-2">
-        <span className="h-9 w-9 shrink-0 rounded-full bg-green-100 text-money-in font-bold flex items-center justify-center">1</span>
-        <div className="relative flex-1">
+      {/* Name + amount on one line */}
+      <div className="flex items-stretch gap-2">
+        <div className="relative flex-1 min-w-0">
           <input
             ref={nameRef}
             value={search}
             onChange={(e) => { setSearch(e.target.value); if (customer) setCustomer(null) }}
-            placeholder="Customer name"
+            placeholder="Name"
             className="w-full rounded-xl border border-slate-200 px-3 py-3 outline-none focus:border-money-in"
           />
           {results.length > 0 && (
-            <ul className="absolute z-10 mt-1 w-full bg-white border border-slate-200 rounded-xl overflow-hidden divide-y shadow-lg">
-              {results.slice(0, 6).map((c) => (
+            <ul className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl overflow-hidden divide-y shadow-lg max-h-64 overflow-y-auto">
+              {results.map((c) => (
                 <li key={c.id}>
                   <button onClick={() => pick(c)} className="w-full text-left px-3 py-2.5 hover:bg-slate-50">{c.name}</button>
                 </li>
@@ -136,11 +146,8 @@ function QuickEntry({ onSaved }) {
             </ul>
           )}
         </div>
-      </div>
 
-      <div className="flex items-center gap-2 mt-2">
-        <span className="h-9 w-9 shrink-0 rounded-full bg-green-100 text-money-in font-bold flex items-center justify-center">2</span>
-        <div className="flex-1 flex items-center gap-1 rounded-xl border border-slate-200 px-3 focus-within:border-money-in">
+        <div className="flex items-center gap-1 rounded-xl border border-slate-200 px-2 focus-within:border-money-in w-32 shrink-0">
           <span className="text-slate-400">₹</span>
           <input
             ref={amountRef}
@@ -148,18 +155,20 @@ function QuickEntry({ onSaved }) {
             onChange={(e) => setAmount(e.target.value)}
             onKeyDown={onAmountKey}
             inputMode="decimal"
-            placeholder="Amount — press Enter to save"
-            className="flex-1 py-3 outline-none bg-transparent text-lg font-semibold"
+            placeholder="Amount"
+            className="w-full py-3 outline-none bg-transparent text-lg font-semibold min-w-0"
           />
           <MicButton onResult={(t) => { const n = (t || '').replace(/[^0-9.]/g, ''); if (n) setAmount(n) }} />
         </div>
+
         <button onClick={save} disabled={saving}
-          className="shrink-0 h-12 w-12 rounded-xl bg-money-in text-white flex items-center justify-center disabled:opacity-50">
+          className="shrink-0 w-12 rounded-xl bg-money-in text-white flex items-center justify-center disabled:opacity-50">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
       </div>
 
-      {msg && <p className="text-xs mt-2 text-slate-500">{msg}</p>}
+      <p className="text-[11px] text-slate-400 mt-1.5 px-1">Type a name, enter amount, press Enter to save.</p>
+      {msg && <p className="text-xs mt-1 text-slate-500 px-1">{msg}</p>}
     </div>
   )
 }
