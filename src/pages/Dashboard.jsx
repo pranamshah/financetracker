@@ -49,7 +49,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-full pb-20 max-w-lg mx-auto">
+    <div className="min-h-screen pb-24 max-w-lg mx-auto bg-white sm:shadow-xl sm:border-x sm:border-slate-200">
       <header className="safe-top sticky top-0 bg-white/90 backdrop-blur border-b border-slate-100 z-10">
         <div className="px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">

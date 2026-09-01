@@ -8,8 +8,8 @@ const ICONS = {
 
 export default function BottomNav({ tabs, tab, setTab }) {
   return (
-    <nav className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 safe-bottom z-20 shadow-[0_-2px_12px_rgba(0,0,0,0.04)]">
-      <div className="max-w-lg mx-auto grid px-1" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+    <nav className="fixed bottom-0 inset-x-0 z-20">
+      <div className="max-w-lg mx-auto bg-white/95 backdrop-blur border-t border-slate-200 sm:border-x safe-bottom grid px-1 shadow-[0_-2px_12px_rgba(0,0,0,0.04)]" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
         {tabs.map((t) => {
           const active = tab === t.key
           return (

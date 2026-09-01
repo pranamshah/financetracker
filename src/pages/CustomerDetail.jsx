@@ -29,8 +29,8 @@ export default function CustomerDetail() {
   const balance = totalToReceive - totalCollected
 
   return (
-    <div className="max-w-lg mx-auto pb-10">
-      <header className="safe-top sticky top-0 bg-white/90 backdrop-blur border-b border-slate-200 z-10">
+    <div className="min-h-screen max-w-lg mx-auto pb-10 bg-white sm:shadow-xl sm:border-x sm:border-slate-200">
+      <header className="safe-top sticky top-0 bg-white/90 backdrop-blur border-b border-slate-100 z-10">
         <div className="px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="text-slate-500 text-xl">‹</button>
           <h1 className="font-bold text-lg flex-1 truncate">{customer.name}</h1>
