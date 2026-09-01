@@ -8,28 +8,45 @@ import DailyEntries from './tabs/DailyEntries.jsx'
 import Customers from './tabs/Customers.jsx'
 import NewTab from './tabs/NewTab.jsx'
 import Summary from './tabs/Summary.jsx'
+import Members from './tabs/Members.jsx'
+
+// Non-admins get 4 tabs; admin gets an extra "People" overview.
+const STAFF_TABS = [
+  { key: 'entries', label: 'Entries' },
+  { key: 'customers', label: 'Customers' },
+  { key: 'new', label: 'New' },
+  { key: 'summary', label: 'Summary' }
+]
+const ADMIN_TABS = [
+  { key: 'members', label: 'People' },
+  ...STAFF_TABS
+]
 
 export default function Dashboard() {
   const { session, logout, isAdmin } = useSession()
   const navigate = useNavigate()
-  const [tab, setTab] = useState('entries')
+  const [tab, setTab] = useState(isAdmin ? 'members' : 'entries')
   const [members, setMembers] = useState([])
-  // Admin filter: null = All. For non-admins it's forced to their own id.
+  // Admin filter: null = All / everyone. For non-admins it's forced to their own id.
   const [filter, setFilter] = useState(null)
 
   useEffect(() => {
     if (isAdmin) api.members().then(setMembers).catch(() => {})
   }, [isAdmin])
 
-  // Non-admins are always scoped to themselves; admin uses the dropdown (null = all).
+  // Non-admins are always scoped to themselves; admin uses the dropdown / People tab.
   const scopeId = isAdmin ? filter : session.id
+  const tabs = isAdmin ? ADMIN_TABS : STAFF_TABS
 
-  const switchUser = () => {
-    logout()
-    navigate('/')
+  const switchUser = () => { logout(); navigate('/') }
+
+  // From the People overview: focus one member and jump into their entries.
+  const openMember = (m) => { setFilter(m.id); setTab('entries') }
+
+  const filterName = filter ? members.find((m) => m.id === filter)?.name : null
+  const titles = {
+    members: 'People', entries: 'Daily Entries', customers: 'Customers', new: 'New', summary: 'Summary'
   }
-
-  const titles = { entries: 'Daily Entries', customers: 'Customers', new: 'New', summary: 'Summary' }
 
   return (
     <div className="min-h-full pb-20 max-w-lg mx-auto">
@@ -43,11 +60,12 @@ export default function Dashboard() {
               <h1 className="font-bold text-lg leading-tight truncate">{titles[tab]}</h1>
               <p className="text-xs text-slate-400 truncate">
                 {session.name}{isAdmin ? ' · Admin' : ''}
+                {isAdmin && filterName ? ` · viewing ${filterName}` : ''}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {isAdmin && tab !== 'new' && (
+            {isAdmin && tab !== 'new' && tab !== 'members' && (
               <MemberFilter members={members} value={filter} onChange={setFilter} />
             )}
             <button
@@ -61,13 +79,14 @@ export default function Dashboard() {
       </header>
 
       <main className="px-4 py-4 animate-in">
+        {tab === 'members' && isAdmin && <Members onOpenMember={openMember} />}
         {tab === 'entries' && <DailyEntries scopeId={scopeId} />}
         {tab === 'customers' && <Customers scopeId={scopeId} isAdmin={isAdmin} />}
         {tab === 'new' && <NewTab onDone={() => setTab('customers')} />}
         {tab === 'summary' && <Summary scopeId={scopeId} isAdmin={isAdmin} />}
       </main>
 
-      <BottomNav tab={tab} setTab={setTab} />
+      <BottomNav tabs={tabs} tab={tab} setTab={setTab} />
     </div>
   )
 }

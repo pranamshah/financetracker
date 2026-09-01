@@ -13,14 +13,14 @@ export default function Login() {
   const submit = async (e) => {
     e.preventDefault()
     setError(null)
-    if (!username.trim()) return setError('Enter your username')
+    if (!username.trim()) return setError('Enter your name')
     setBusy(true)
     try {
       const member = await api.login(username.trim())
       login(member)
       navigate('/app')
     } catch (err) {
-      setError(err.message === 'Username not found' ? 'Username not found' : err.message)
+      setError(err.message === 'Name not found' ? 'Name not found — check the spelling' : err.message)
       setBusy(false)
     }
   }
@@ -31,14 +31,14 @@ export default function Login() {
       <div className="text-center mb-8">
         <div className="mx-auto mb-5 h-20 w-20 rounded-3xl bg-money-in flex items-center justify-center text-white text-4xl font-bold shadow-lg shadow-green-200">₹</div>
         <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Finance Tracker</h1>
-        <p className="text-slate-500 mt-2">Enter your username to continue</p>
+        <p className="text-slate-500 mt-2">Enter your name to continue</p>
       </div>
 
       <form onSubmit={submit} className="space-y-3">
         <input
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
+          placeholder="Your name"
           autoCapitalize="none"
           autoCorrect="off"
           autoComplete="username"

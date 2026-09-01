@@ -17,6 +17,7 @@ async function req(path, options = {}) {
 export const api = {
   login: (username) => req('login', { method: 'POST', body: JSON.stringify({ username }) }),
   members: () => req('members'),
+  memberStats: () => req('members?stats=1'),
 
   customers: ({ search, memberId } = {}) => {
     const p = new URLSearchParams()
