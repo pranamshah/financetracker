@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api.js'
+import { useAutoRefresh } from '../../lib/useAutoRefresh.js'
 
 export default function Customers() {
   const [all, setAll] = useState([])
@@ -8,12 +9,11 @@ export default function Customers() {
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    api.customers()
-      .then(setAll)
-      .catch(() => setAll([]))
-      .finally(() => setLoading(false))
-  }, [])
+  const load = () => api.customers().then(setAll).catch(() => setAll([])).finally(() => setLoading(false))
+
+  useEffect(() => { load() }, [])
+  // Refresh the customer list when returning to the tab (new customers added elsewhere).
+  useAutoRefresh(load, { intervalMs: 0 })
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase()

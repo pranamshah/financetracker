@@ -33,7 +33,13 @@ export default function CustomerDetail() {
       <header className="safe-top sticky top-0 bg-white/90 backdrop-blur border-b border-slate-200 z-10">
         <div className="px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="text-slate-500 text-xl">‹</button>
-          <h1 className="font-bold text-lg">{customer.name}</h1>
+          <h1 className="font-bold text-lg flex-1 truncate">{customer.name}</h1>
+          <button
+            onClick={async () => { const { customerHistoryPdf } = await import('../lib/pdf.js'); customerHistoryPdf(data) }}
+            className="text-xs font-semibold text-money-in border border-money-in rounded-lg px-2.5 py-1.5"
+          >
+            PDF
+          </button>
         </div>
       </header>
 

@@ -34,5 +34,11 @@ export const api = {
     const p = new URLSearchParams({ range })
     if (memberId) p.set('member_id', memberId)
     return req(`summary?${p.toString()}`)
+  },
+
+  report: ({ range = 'today', memberId } = {}) => {
+    const p = new URLSearchParams({ range })
+    if (memberId) p.set('member_id', memberId)
+    return req(`report?${p.toString()}`)
   }
 }

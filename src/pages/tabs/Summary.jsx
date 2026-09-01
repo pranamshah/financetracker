@@ -12,6 +12,7 @@ export default function Summary({ scopeId }) {
   const [range, setRange] = useState('today')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -20,6 +21,19 @@ export default function Summary({ scopeId }) {
       .catch(() => setData(null))
       .finally(() => setLoading(false))
   }, [range, scopeId])
+
+  const downloadPdf = async () => {
+    setDownloading(true)
+    try {
+      const rep = await api.report({ range, memberId: scopeId })
+      const { periodReportPdf } = await import('../../lib/pdf.js')
+      periodReportPdf(rep)
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
     <div>
@@ -55,6 +69,14 @@ export default function Summary({ scopeId }) {
             <Stat label="Entries" value={data.entry_count} tone="plain" />
             <Stat label="New customers" value={data.new_customers} tone="plain" />
           </div>
+
+          <button
+            onClick={downloadPdf}
+            disabled={downloading}
+            className="w-full rounded-xl border border-money-in text-money-in font-semibold py-3 disabled:opacity-50"
+          >
+            {downloading ? 'Preparing…' : `Download ${RANGES.find((r) => r.key === range).label} PDF`}
+          </button>
         </div>
       )}
     </div>

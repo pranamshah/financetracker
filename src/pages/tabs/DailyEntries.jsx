@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../../lib/api.js'
 import { useSession } from '../../context/SessionContext.jsx'
 import { fmt } from '../../lib/calc.js'
+import { useAutoRefresh } from '../../lib/useAutoRefresh.js'
 import MicButton from '../../components/MicButton.jsx'
 
 export default function DailyEntries({ scopeId }) {
@@ -9,15 +10,16 @@ export default function DailyEntries({ scopeId }) {
   const [loading, setLoading] = useState(true)
   const [showNew, setShowNew] = useState(false)
 
-  const load = () => {
-    setLoading(true)
+  const load = (silent = false) => {
+    if (!silent) setLoading(true)
     api.entries({ memberId: scopeId, date: 'today' })
       .then(setEntries)
       .catch(() => setEntries([]))
       .finally(() => setLoading(false))
   }
 
-  useEffect(load, [scopeId])
+  useEffect(() => { load() }, [scopeId])
+  useAutoRefresh(() => load(true))
 
   const total = entries.reduce((s, e) => s + Number(e.amount), 0)
 
