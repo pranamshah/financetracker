@@ -10,7 +10,8 @@ async function req(path, options = {}) {
 }
 
 export const api = {
-  employees: () => req('employees'),
+  login: (username) => req('login', { method: 'POST', body: JSON.stringify({ username }) }),
+  members: () => req('members'),
 
   customers: (search) => req(`customers${search ? `?search=${encodeURIComponent(search)}` : ''}`),
   customer: (id) => req(`customers?id=${id}`),
@@ -20,18 +21,18 @@ export const api = {
     req(`loans?customer_id=${customerId}${status ? `&status=${status}` : ''}`),
   createLoan: (body) => req('loans', { method: 'POST', body: JSON.stringify(body) }),
 
-  entries: ({ employeeId, date } = {}) => {
+  entries: ({ memberId, date } = {}) => {
     const p = new URLSearchParams()
-    if (employeeId) p.set('employee_id', employeeId)
+    if (memberId) p.set('member_id', memberId)
     if (date) p.set('date', date)
     const qs = p.toString()
     return req(`entries${qs ? `?${qs}` : ''}`)
   },
   createEntry: (body) => req('entries', { method: 'POST', body: JSON.stringify(body) }),
 
-  summary: ({ range = 'today', employeeId } = {}) => {
+  summary: ({ range = 'today', memberId } = {}) => {
     const p = new URLSearchParams({ range })
-    if (employeeId) p.set('employee_id', employeeId)
+    if (memberId) p.set('member_id', memberId)
     return req(`summary?${p.toString()}`)
   }
 }

@@ -1,8 +1,9 @@
--- Seed the employees table.
--- Replace the sample rows below with the real names. Exactly one admin (father).
+-- Seed the members table.
+-- Replace the placeholder rows below with the real usernames + names.
+-- Exactly one admin. Usernames are private (login is by username, not a list).
 
-insert into employees (name, role) values
-  ('Father', 'admin'),
-  ('Employee One', 'staff'),
-  ('Employee Two', 'staff')
-on conflict (name) do nothing;
+insert into members (username, name, role) values
+  ('owner', 'Owner', 'admin'),
+  ('m1', 'Member One', 'member'),
+  ('m2', 'Member Two', 'member')
+on conflict (username) do nothing;

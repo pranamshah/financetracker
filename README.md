@@ -1,9 +1,10 @@
 # Finance Tracker
 
-Installable PWA for an informal money-lending business. Admin (father) lends
-money; employees collect daily/weekly/monthly/yearly installments. No login —
-simple name-select. Works "Add to Home Screen" on Android Chrome and iPhone
-Safari.
+Installable PWA for an informal money-lending business. Admin lends money;
+members collect daily/weekly/monthly/yearly installments. Access is by
+**username** (no name list to pick from), so the hierarchy is preserved —
+only the admin username opens the admin view. Works "Add to Home Screen" on
+Android Chrome and iPhone Safari.
 
 **Stack:** React + Vite + Tailwind + `vite-plugin-pwa`, **Neon** (serverless
 Postgres) accessed through Vercel serverless functions in `/api`, deployed free
@@ -24,7 +25,7 @@ on Vercel. Voice input via the browser-native Web Speech API.
    DATABASE_URL=postgresql://...
    ```
 
-## 2. Create tables + seed employees
+## 2. Create tables + seed members
 
 Either run the helper script:
 
@@ -35,7 +36,8 @@ npm run db:setup -- --seed     # runs db/schema.sql then db/seed.sql
 
 …or paste `db/schema.sql` and `db/seed.sql` into the Neon **SQL Editor**.
 
-Edit `db/seed.sql` first with the real employee names (exactly one `admin`).
+Edit `db/seed.sql` first with the real usernames + names (exactly one `admin`).
+Usernames are private — they are how each person logs in.
 
 ## 3. Run locally
 
@@ -60,7 +62,7 @@ Open http://localhost:5173.
 
 ## Database schema
 
-See `db/schema.sql`. Tables: `employees`, `customers`, `loans`, `entries`.
+See `db/schema.sql`. Tables: `members`, `customers`, `loans`, `entries`.
 
 ## Calculations
 
@@ -76,11 +78,12 @@ A loan auto-closes once collected ≥ total_to_receive.
 
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/api/employees` | name-select list |
+| POST | `/api/login` | look up a member by username |
+| GET | `/api/members` | member list (admin filter only) |
 | GET/POST | `/api/customers` | list/search/detail/create |
 | GET/POST | `/api/loans` | loans per customer / create |
 | GET/POST | `/api/entries` | today's or dated collections / create |
 | GET | `/api/summary` | today/week/month totals |
 
-`employee_id` query param scopes results to one employee (staff always see only
-their own; admin can pass it via the "All / [name]" filter).
+`member_id` query param scopes results to one member (non-admins always see
+only their own; admin can pass it via the "All / [name]" filter).

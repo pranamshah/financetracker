@@ -11,7 +11,7 @@ export default function DailyEntries({ scopeId }) {
 
   const load = () => {
     setLoading(true)
-    api.entries({ employeeId: scopeId, date: 'today' })
+    api.entries({ memberId: scopeId, date: 'today' })
       .then(setEntries)
       .catch(() => setEntries([]))
       .finally(() => setLoading(false))
@@ -43,7 +43,7 @@ export default function DailyEntries({ scopeId }) {
               <p className="font-semibold text-slate-800">{e.customer_name}</p>
               <p className="text-xs text-slate-400">
                 {new Date(e.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                {e.employee_name ? ` · ${e.employee_name}` : ''}
+                {e.member_name ? ` · ${e.member_name}` : ''}
               </p>
             </div>
             <span className="font-bold text-money-in">+₹{fmt(e.amount)}</span>
@@ -116,7 +116,7 @@ function NewEntryModal({ onClose, onSaved }) {
       await api.createEntry({
         loan_id: loanId,
         customer_id: customer.id,
-        employee_id: session.id,
+        member_id: session.id,
         amount: Number(amount),
         note: note || null
       })

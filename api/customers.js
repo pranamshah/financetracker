@@ -53,10 +53,10 @@ async function getDetail(id) {
     order by l.created_at desc`
 
   const entries = await sql`
-    select e.id, e.loan_id, e.amount, e.entry_date, e.note, e.employee_id,
-           emp.name as employee_name
+    select e.id, e.loan_id, e.amount, e.entry_date, e.note, e.member_id,
+           m.name as member_name
     from entries e
-    left join employees emp on emp.id = e.employee_id
+    left join members m on m.id = e.member_id
     where e.customer_id = ${id}
     order by e.entry_date desc, e.created_at desc`
 

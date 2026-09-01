@@ -18,8 +18,8 @@ export function SessionProvider({ children }) {
     else localStorage.removeItem(KEY)
   }, [session])
 
-  const login = (employee) =>
-    setSession({ id: employee.id, name: employee.name, role: employee.role })
+  const login = (member) =>
+    setSession({ id: member.id, name: member.name, role: member.role })
   const logout = () => setSession(null)
 
   const isAdmin = session?.role === 'admin'

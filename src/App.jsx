@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useSession } from './context/SessionContext.jsx'
-import NameSelect from './pages/NameSelect.jsx'
+import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import CustomerDetail from './pages/CustomerDetail.jsx'
 
@@ -14,7 +14,7 @@ export default function App() {
   const { session } = useSession()
   return (
     <Routes>
-      <Route path="/" element={session ? <Navigate to="/app" replace /> : <NameSelect />} />
+      <Route path="/" element={session ? <Navigate to="/app" replace /> : <Login />} />
       <Route path="/app" element={<RequireSession><Dashboard /></RequireSession>} />
       <Route path="/customer/:id" element={<RequireSession><CustomerDetail /></RequireSession>} />
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -3,11 +3,14 @@
 
 create extension if not exists "pgcrypto";
 
--- Employees (no login; simple name-select)
-create table if not exists employees (
+-- Members (people who use the app). Login is by unique username — there is no
+-- public list of names, so the hierarchy is preserved: only someone who knows
+-- the admin username can open the admin view.
+create table if not exists members (
   id         uuid primary key default gen_random_uuid(),
-  name       text not null unique,
-  role       text not null default 'staff' check (role in ('admin', 'staff')),
+  username   text not null unique,
+  name       text not null,
+  role       text not null default 'member' check (role in ('admin', 'member')),
   created_at timestamptz not null default now()
 );
 
@@ -17,7 +20,7 @@ create table if not exists customers (
   name       text not null,
   phone      text,
   address    text,
-  added_by   uuid references employees(id),
+  added_by   uuid references members(id),
   created_at timestamptz not null default now()
 );
 
@@ -34,7 +37,7 @@ create table if not exists loans (
   installment_amount numeric not null,
   start_date        date not null default current_date,
   status            text not null default 'active' check (status in ('active','closed')),
-  created_by        uuid references employees(id),
+  created_by        uuid references members(id),
   created_at        timestamptz not null default now()
 );
 
@@ -43,7 +46,7 @@ create table if not exists entries (
   id          uuid primary key default gen_random_uuid(),
   loan_id     uuid not null references loans(id) on delete cascade,
   customer_id uuid not null references customers(id) on delete cascade,
-  employee_id uuid references employees(id),
+  member_id   uuid references members(id),
   amount      numeric not null,
   entry_date  date not null default current_date,
   note        text,
@@ -54,4 +57,4 @@ create index if not exists idx_loans_customer on loans(customer_id);
 create index if not exists idx_entries_loan on entries(loan_id);
 create index if not exists idx_entries_customer on entries(customer_id);
 create index if not exists idx_entries_date on entries(entry_date);
-create index if not exists idx_entries_employee on entries(employee_id);
+create index if not exists idx_entries_member on entries(member_id);

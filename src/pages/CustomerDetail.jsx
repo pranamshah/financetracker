@@ -94,7 +94,7 @@ export default function CustomerDetail() {
               <li key={e.id} className="rounded-xl bg-white border border-slate-200 px-4 py-2.5 flex justify-between items-center">
                 <div>
                   <p className="text-sm font-medium">{new Date(e.entry_date).toLocaleDateString()}</p>
-                  <p className="text-xs text-slate-400">{e.employee_name || ''}{e.note ? ` · ${e.note}` : ''}</p>
+                  <p className="text-xs text-slate-400">{e.member_name || ''}{e.note ? ` · ${e.note}` : ''}</p>
                 </div>
                 <span className="font-bold text-money-in">+₹{fmt(e.amount)}</span>
               </li>

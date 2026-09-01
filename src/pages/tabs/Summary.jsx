@@ -15,7 +15,7 @@ export default function Summary({ scopeId }) {
 
   useEffect(() => {
     setLoading(true)
-    api.summary({ range, employeeId: scopeId })
+    api.summary({ range, memberId: scopeId })
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false))
