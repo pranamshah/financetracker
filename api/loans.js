@@ -37,7 +37,7 @@ export default async function handler(req, res) {
         ) values (
           ${customer_id}, ${amount_given}, ${interest_amount || 0}, ${total_to_receive},
           ${tenure_days}, ${frequency}, ${installment_count}, ${installment_amount},
-          ${start_date || null}, ${created_by || null}
+          coalesce(${start_date || null}::date, current_date), ${created_by || null}
         )
         returning *`
       return send(res, 201, rows[0])
