@@ -68,6 +68,7 @@ export default function Dashboard() {
             {isAdmin && tab !== 'new' && tab !== 'members' && (
               <MemberFilter members={members} value={filter} onChange={setFilter} />
             )}
+            {isAdmin && <KebabMenu />}
             <button
               onClick={switchUser}
               className="text-xs font-semibold text-slate-500 border border-slate-200 rounded-lg px-2.5 py-1.5 active:bg-slate-50"
@@ -87,6 +88,54 @@ export default function Dashboard() {
       </main>
 
       <BottomNav tabs={tabs} tab={tab} setTab={setTab} />
+    </div>
+  )
+}
+
+// Admin-only ⋮ menu with database storage usage.
+function KebabMenu() {
+  const [open, setOpen] = useState(false)
+  const [info, setInfo] = useState(null)
+
+  useEffect(() => {
+    if (open && !info) api.storage().then(setInfo).catch(() => setInfo({ error: true }))
+  }, [open, info])
+
+  const pct = info?.percent ?? 0
+  const barColor = pct > 90 ? 'bg-red-500' : pct > 70 ? 'bg-amber-500' : 'bg-money-in'
+
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen((o) => !o)} aria-label="Menu"
+        className="h-8 w-8 rounded-lg border border-slate-200 text-slate-500 flex items-center justify-center active:bg-slate-50">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-4">
+            <p className="text-sm font-bold text-slate-700 mb-2">Database storage</p>
+            {!info && <p className="text-xs text-slate-400">Loading…</p>}
+            {info?.error && <p className="text-xs text-red-500">Could not load</p>}
+            {info && !info.error && (
+              <>
+                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div className={`h-full ${barColor}`} style={{ width: `${Math.max(2, pct)}%` }} />
+                </div>
+                <p className="text-xs text-slate-500 mt-1.5">
+                  {pct}% used · {(info.used_bytes / 1048576).toFixed(1)} MB of 512 MB
+                </p>
+                <p className="text-[11px] text-slate-400 mt-2">
+                  {info.customers} customers · {info.loans} loans · {info.entries} entries
+                </p>
+                {pct > 80 && (
+                  <p className="text-[11px] text-red-500 mt-2">Storage getting full — download a backup PDF and contact support.</p>
+                )}
+              </>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

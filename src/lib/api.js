@@ -19,6 +19,7 @@ export const api = {
   members: () => req('members'),
   memberStats: () => req('members?stats=1'),
   allData: () => req('alldata'),
+  storage: () => req('storage'),
   deleteCustomer: (id) => req(`customers?id=${id}`, { method: 'DELETE' }),
   deleteLoan: (id) => req(`loans?id=${id}`, { method: 'DELETE' }),
 
