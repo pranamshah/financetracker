@@ -7,8 +7,13 @@ const { Pool } = pg
 let pool
 function getPool() {
   if (!pool) {
+    // Strip channel_binding (Neon adds it; the node-postgres driver doesn't do
+    // SCRAM channel binding) so you can paste the raw Neon string as-is.
+    const conn = (process.env.DATABASE_URL || '')
+      .replace(/([?&])channel_binding=[^&]*/i, '$1')
+      .replace(/[?&]$/, '')
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: conn,
       // Cloud Postgres (CockroachDB/Neon) needs TLS. Encrypted either way.
       ssl: { rejectUnauthorized: false },
       max: 3,

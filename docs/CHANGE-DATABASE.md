@@ -14,10 +14,13 @@ automatically on a new database. Years away; only do it if the storage bar
 
 3. **Put it in Vercel:** **https://vercel.com** → project **finance-tracker** →
    **Settings → Environment Variables** → edit **DATABASE_URL** → paste the new
-   string → **Save**.
+   string → **Save**. (Paste it exactly as Neon gives it — any extra options are
+   handled automatically.)
 
-4. **Redeploy:** Vercel → **Deployments** → newest one → **⋯ → Redeploy** →
-   confirm. Wait ~1 minute.
+4. **Redeploy (REQUIRED):** Vercel → **Deployments** → newest one →
+   **⋯ → Redeploy** → confirm. Wait ~1 minute.
+   *Changing the string alone does nothing until you redeploy — the app keeps
+   using the old database until this step.*
 
 5. **Open the app** (https://finance-tracker-chi-ruddy-55.vercel.app) and log in
    (Sailesh 2904). It will be fresh and empty — the tables and PINs are created
