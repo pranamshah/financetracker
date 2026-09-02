@@ -24,7 +24,7 @@ export default function DailyEntries({ scopeId }) {
 
   return (
     <div>
-      <QuickEntry onSaved={() => load(true)} />
+      <QuickEntry scopeId={scopeId} onSaved={() => load(true)} />
 
       {!loading && entries.length > 0 && (
         <div className="mb-3 rounded-2xl bg-green-50 border border-green-100 px-4 py-3">
@@ -58,7 +58,7 @@ export default function DailyEntries({ scopeId }) {
 
 // Always-visible quick entry: type/pick customer, type amount, press Enter.
 // Saves and returns focus to the customer field for the next entry.
-function QuickEntry({ onSaved }) {
+function QuickEntry({ scopeId, onSaved }) {
   const { session } = useSession()
   const [search, setSearch] = useState('')
   const [results, setResults] = useState([])
@@ -76,7 +76,7 @@ function QuickEntry({ onSaved }) {
 
   // Load the customer list once, then filter locally so suggestions appear
   // instantly on every keystroke.
-  useEffect(() => { api.customers().then(setAllCustomers).catch(() => {}) }, [])
+  useEffect(() => { api.customers({ memberId: scopeId }).then(setAllCustomers).catch(() => {}) }, [scopeId])
 
   useEffect(() => {
     const q = search.trim().toLowerCase()

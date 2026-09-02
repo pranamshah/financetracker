@@ -16,8 +16,13 @@ export default async function handler(req, res) {
       const member_id = req.query.member_id || null
       const term = search ? `%${search.toLowerCase()}%` : null
       const rows = await sql`
-        select c.id, c.name, c.phone, c.address, c.added_by
+        select c.id, c.name, c.phone, c.address, c.added_by,
+          m.name as added_by_name,
+          coalesce((select sum(l.total_to_receive) from loans l where l.customer_id = c.id),0) as total_to_receive,
+          coalesce((select sum(l.amount_given) from loans l where l.customer_id = c.id),0) as total_given,
+          coalesce((select sum(e.amount) from entries e where e.customer_id = c.id),0) as collected
         from customers c
+        left join members m on m.id = c.added_by
         where (${term}::text is null or lower(c.name) like ${term})
           and (
             ${member_id}::uuid is null

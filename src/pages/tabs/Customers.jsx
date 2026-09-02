@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api.js'
+import { fmt } from '../../lib/calc.js'
 import { useAutoRefresh } from '../../lib/useAutoRefresh.js'
 
-export default function Customers({ scopeId }) {
+export default function Customers({ scopeId, isAdmin }) {
   const [all, setAll] = useState([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -55,13 +56,20 @@ export default function Customers({ scopeId }) {
               <li key={c.id}>
                 <button
                   onClick={() => navigate(`/customer/${c.id}`)}
-                  className="w-full text-left card px-4 py-3 flex items-center justify-between active:scale-[0.99] transition"
+                  className="w-full text-left card px-4 py-3 flex items-center justify-between gap-3 active:scale-[0.99] transition"
                 >
-                  <div>
-                    <p className="font-semibold text-slate-800">{c.name}</p>
-                    {c.phone && <p className="text-xs text-slate-400">{c.phone}</p>}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-800 truncate">{c.name}</p>
+                    <p className="text-xs text-slate-400 truncate">
+                      Given ₹{fmt(c.total_given)}
+                      {c.phone ? ` · ${c.phone}` : ''}
+                      {isAdmin && c.added_by_name ? ` · by ${c.added_by_name}` : ''}
+                    </p>
                   </div>
-                  <span className="text-slate-300">›</span>
+                  <div className="text-right shrink-0 whitespace-nowrap">
+                    <p className="text-xs text-slate-400">Balance</p>
+                    <p className="font-bold text-money-out">₹{fmt(Number(c.total_to_receive) - Number(c.collected))}</p>
+                  </div>
                 </button>
               </li>
             ))}
