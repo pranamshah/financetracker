@@ -6,8 +6,12 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // Self-destroying: ship a service worker that unregisters itself and
+      // clears all old caches. This removes the offline layer that kept
+      // serving stale files (stale PDF chunk, old login, etc.). The app is
+      // always online, so it now just loads fresh from the network every time.
+      selfDestroying: true,
       registerType: 'autoUpdate',
-      workbox: { clientsClaim: true, skipWaiting: true, cleanupOutdatedCaches: true },
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Finance Tracker',
