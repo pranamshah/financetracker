@@ -1,0 +1,136 @@
+{
+  "exported_at": "2026-09-02T16:39:18.302Z",
+  "members": [
+    {
+      "id": "d1b441a8-368e-4034-96c3-585ed285de34",
+      "username": "sailesh",
+      "name": "Sailesh",
+      "role": "admin",
+      "created_at": "2026-09-01T15:57:36.087Z",
+      "pin": "2904"
+    },
+    {
+      "id": "9afa9dd6-6016-49f5-8e55-3e1eb60108a8",
+      "username": "sarath",
+      "name": "Sarath",
+      "role": "member",
+      "created_at": "2026-09-01T15:57:36.146Z",
+      "pin": "0000"
+    }
+  ],
+  "customers": [
+    {
+      "id": "878d2876-75af-4cab-9b8c-96ce659b88cc",
+      "name": "murugan",
+      "phone": null,
+      "address": null,
+      "added_by": "d1b441a8-368e-4034-96c3-585ed285de34",
+      "created_at": "2026-09-01T16:37:00.637Z"
+    },
+    {
+      "id": "c8044f69-3f07-4462-bf83-7b917539651a",
+      "name": "Sakti",
+      "phone": null,
+      "address": null,
+      "added_by": "d1b441a8-368e-4034-96c3-585ed285de34",
+      "created_at": "2026-09-02T07:15:20.460Z"
+    },
+    {
+      "id": "a66e6361-d451-44a3-8030-83b2446c73f8",
+      "name": "Murugann",
+      "phone": null,
+      "address": null,
+      "added_by": "9afa9dd6-6016-49f5-8e55-3e1eb60108a8",
+      "created_at": "2026-09-02T07:16:55.029Z"
+    }
+  ],
+  "loans": [
+    {
+      "id": "1a5c6ddc-89c7-46af-88f8-f758719ebf3b",
+      "customer_id": "878d2876-75af-4cab-9b8c-96ce659b88cc",
+      "amount_given": "90000",
+      "interest_amount": "10000",
+      "total_to_receive": "100000",
+      "tenure_days": 100,
+      "frequency": "daily",
+      "installment_count": 100,
+      "installment_amount": "1000",
+      "start_date": "2026-09-01T00:00:00.000Z",
+      "status": "active",
+      "created_by": "d1b441a8-368e-4034-96c3-585ed285de34",
+      "created_at": "2026-09-01T18:08:02.318Z"
+    },
+    {
+      "id": "47381bad-e44d-4bf8-bf8d-06872ac0c1f0",
+      "customer_id": "c8044f69-3f07-4462-bf83-7b917539651a",
+      "amount_given": "9000",
+      "interest_amount": "1000",
+      "total_to_receive": "10000",
+      "tenure_days": 100,
+      "frequency": "daily",
+      "installment_count": 100,
+      "installment_amount": "100",
+      "start_date": "2026-09-02T00:00:00.000Z",
+      "status": "active",
+      "created_by": "d1b441a8-368e-4034-96c3-585ed285de34",
+      "created_at": "2026-09-02T07:15:33.493Z"
+    },
+    {
+      "id": "0599007b-3aed-4b33-81ce-3f32067dfa28",
+      "customer_id": "a66e6361-d451-44a3-8030-83b2446c73f8",
+      "amount_given": "90000",
+      "interest_amount": "10000",
+      "total_to_receive": "100000",
+      "tenure_days": 100,
+      "frequency": "daily",
+      "installment_count": 100,
+      "installment_amount": "1000",
+      "start_date": "2026-09-02T00:00:00.000Z",
+      "status": "active",
+      "created_by": "9afa9dd6-6016-49f5-8e55-3e1eb60108a8",
+      "created_at": "2026-09-02T07:17:04.070Z"
+    }
+  ],
+  "entries": [
+    {
+      "id": "1f05c1aa-8689-4e03-a1ab-ff9bf8370c5a",
+      "loan_id": "1a5c6ddc-89c7-46af-88f8-f758719ebf3b",
+      "customer_id": "878d2876-75af-4cab-9b8c-96ce659b88cc",
+      "member_id": "d1b441a8-368e-4034-96c3-585ed285de34",
+      "amount": "2000",
+      "entry_date": "2026-09-01T00:00:00.000Z",
+      "note": null,
+      "created_at": "2026-09-01T19:43:50.870Z"
+    },
+    {
+      "id": "6999d37a-0324-4907-a5ad-3ee65777f86c",
+      "loan_id": "1a5c6ddc-89c7-46af-88f8-f758719ebf3b",
+      "customer_id": "878d2876-75af-4cab-9b8c-96ce659b88cc",
+      "member_id": "d1b441a8-368e-4034-96c3-585ed285de34",
+      "amount": "2000",
+      "entry_date": "2026-09-02T00:00:00.000Z",
+      "note": null,
+      "created_at": "2026-09-02T07:15:08.473Z"
+    },
+    {
+      "id": "90d763d1-8fb3-4866-835e-8ea32c2dda96",
+      "loan_id": "47381bad-e44d-4bf8-bf8d-06872ac0c1f0",
+      "customer_id": "c8044f69-3f07-4462-bf83-7b917539651a",
+      "member_id": "d1b441a8-368e-4034-96c3-585ed285de34",
+      "amount": "100",
+      "entry_date": "2026-09-02T00:00:00.000Z",
+      "note": null,
+      "created_at": "2026-09-02T07:15:52.866Z"
+    },
+    {
+      "id": "4820aac5-054d-4646-831f-26ecf95a7455",
+      "loan_id": "0599007b-3aed-4b33-81ce-3f32067dfa28",
+      "customer_id": "a66e6361-d451-44a3-8030-83b2446c73f8",
+      "member_id": "9afa9dd6-6016-49f5-8e55-3e1eb60108a8",
+      "amount": "1000",
+      "entry_date": "2026-09-02T00:00:00.000Z",
+      "note": null,
+      "created_at": "2026-09-02T07:17:18.648Z"
+    }
+  ]
+}

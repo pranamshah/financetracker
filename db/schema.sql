@@ -1,7 +1,5 @@
--- Finance Tracker schema for Neon (Postgres)
--- Run this once against your Neon database (via Neon SQL Editor or `npm run db:setup`).
-
-create extension if not exists "pgcrypto";
+-- Finance Tracker schema (Postgres / CockroachDB compatible).
+-- gen_random_uuid() is built in on both — no extension needed.
 
 -- Members (people who use the app). Login is by unique username — there is no
 -- public list of names, so the hierarchy is preserved: only someone who knows
