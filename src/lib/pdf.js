@@ -124,7 +124,6 @@ export function periodReportPdf({ range, rows, given }) {
     days[idx[key]].entries.push(r)
   }
 
-  let grand = 0
   if (days.length === 0) {
     autoTable(doc, { ...tableStyle, startY: y + 12, body: [['No collections in this period']] })
     y = doc.lastAutoTable.finalY
@@ -134,29 +133,13 @@ export function periodReportPdf({ range, rows, given }) {
     doc.setFont('helvetica', 'bold').setFontSize(12)
     y += 22
     doc.text(d(day.key), 40, y)
-    let dayTotal = 0
-    const body = day.entries.map((e) => {
-      dayTotal += Number(e.amount); grand += Number(e.amount)
-      return [e.customer_name, rs(e.amount), e.member_name || '', e.note || '']
-    })
+    const body = day.entries.map((e) => [e.customer_name, rs(e.amount), e.member_name || '', e.note || ''])
     autoTable(doc, {
       ...tableStyle, startY: y + 6,
       head: [['Customer', 'Amount', 'Collected by', 'Note']],
       body
     })
     y = doc.lastAutoTable.finalY
-    doc.setFont('helvetica', 'bold').setFontSize(10)
-    y += 14
-    doc.text(`Total for ${d(day.key)}: ${rs(dayTotal)}`, 40, y)
-  })
-
-  doc.setFont('helvetica', 'bold').setFontSize(12)
-  y += 28
-  doc.text('Totals', 40, y)
-  autoTable(doc, {
-    ...tableStyle, startY: y + 6,
-    head: [['Collected (in)', 'New loans given (out)', 'Net']],
-    body: [[rs(grand), rs(given), rs(grand - given)]]
   })
 
   save(doc, `Report_${label}_${new Date().toISOString().slice(0, 10)}.pdf`)
