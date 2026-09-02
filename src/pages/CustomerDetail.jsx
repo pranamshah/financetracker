@@ -8,9 +8,16 @@ import LoanForm from '../components/LoanForm.jsx'
 export default function CustomerDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { isAdmin } = useSession()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showLoan, setShowLoan] = useState(false)
+
+  const deleteCustomer = async () => {
+    if (!window.confirm('Delete this customer and ALL their loans and history? This cannot be undone.')) return
+    try { await api.deleteCustomer(id); navigate('/app') }
+    catch (e) { alert(e.message) }
+  }
 
   const load = () => {
     setLoading(true)
@@ -41,6 +48,12 @@ export default function CustomerDetail() {
           >
             PDF
           </button>
+          {isAdmin && (
+            <button onClick={deleteCustomer}
+              className="text-xs font-semibold text-red-600 border border-red-200 rounded-lg px-2.5 py-1.5">
+              Delete
+            </button>
+          )}
         </div>
       </header>
 
@@ -116,6 +129,12 @@ function LoanBlock({ loan, index, entries, customer, onChanged }) {
     finally { setBusyId(null) }
   }
 
+  const removeLoan = async () => {
+    if (!window.confirm(`Delete Loan ${index} and all its history? This cannot be undone.`)) return
+    try { await api.deleteLoan(loan.id); onChanged?.() }
+    catch (err) { alert(err.message) }
+  }
+
   const pending = Number(loan.total_to_receive) - collected
   const over = overdueDays(loan)
 
@@ -152,9 +171,16 @@ function LoanBlock({ loan, index, entries, customer, onChanged }) {
 
       <div className="flex items-center justify-between mt-3 mb-1">
         <p className="text-xs font-semibold text-slate-500">Collection history</p>
-        <button onClick={downloadLoan} className="text-xs font-semibold text-money-in border border-money-in rounded-lg px-2 py-1">
-          PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={downloadLoan} className="text-xs font-semibold text-money-in border border-money-in rounded-lg px-2 py-1">
+            PDF
+          </button>
+          {isAdmin && (
+            <button onClick={removeLoan} className="text-xs font-semibold text-red-600 border border-red-200 rounded-lg px-2 py-1">
+              Delete loan
+            </button>
+          )}
+        </div>
       </div>
       {entries.length === 0 ? (
         <p className="text-xs text-slate-400">No collections yet</p>

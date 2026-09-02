@@ -8,7 +8,7 @@ const RANGES = [
   { key: 'month', label: 'This Month' }
 ]
 
-export default function Summary({ scopeId }) {
+export default function Summary({ scopeId, isAdmin }) {
   const [range, setRange] = useState('today')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -25,13 +25,27 @@ export default function Summary({ scopeId }) {
   const downloadPdf = async () => {
     setDownloading(true)
     try {
-      const rep = await api.report({ range, memberId: scopeId })
+      const rep = await api.report({ range, memberId: scopeId, group: 'day' })
       const { periodReportPdf } = await import('../../lib/pdf.js')
       periodReportPdf(rep)
     } catch (e) {
       alert(e.message)
     } finally {
       setDownloading(false)
+    }
+  }
+
+  const [downloadingAll, setDownloadingAll] = useState(false)
+  const downloadAll = async () => {
+    setDownloadingAll(true)
+    try {
+      const data = await api.allData()
+      const { allDataPdf } = await import('../../lib/pdf.js')
+      allDataPdf(data)
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      setDownloadingAll(false)
     }
   }
 
@@ -75,8 +89,18 @@ export default function Summary({ scopeId }) {
             disabled={downloading}
             className="w-full rounded-xl border border-money-in text-money-in font-semibold py-3 disabled:opacity-50"
           >
-            {downloading ? 'Preparing…' : `Download ${RANGES.find((r) => r.key === range).label} PDF`}
+            {downloading ? 'Preparing…' : `Download ${RANGES.find((r) => r.key === range).label} PDF (day-wise)`}
           </button>
+
+          {isAdmin && (
+            <button
+              onClick={downloadAll}
+              disabled={downloadingAll}
+              className="w-full rounded-xl bg-slate-800 text-white font-semibold py-3 disabled:opacity-50"
+            >
+              {downloadingAll ? 'Preparing…' : 'Download ALL data (backup PDF)'}
+            </button>
+          )}
         </div>
       )}
     </div>

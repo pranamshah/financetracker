@@ -4,53 +4,72 @@ import { api } from '../lib/api.js'
 import { useSession } from '../context/SessionContext.jsx'
 
 export default function Login() {
-  const [username, setUsername] = useState('')
+  const [pin, setPin] = useState('')
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
   const { login } = useSession()
   const navigate = useNavigate()
 
-  const submit = async (e) => {
-    e.preventDefault()
+  const submit = async (value) => {
     setError(null)
-    if (!username.trim()) return setError('Enter your name')
     setBusy(true)
     try {
-      const member = await api.login(username.trim())
+      const member = await api.login(value)
       login(member)
       navigate('/app')
     } catch (err) {
-      setError(err.message === 'Name not found' ? 'Name not found — check the spelling' : err.message)
+      setError(err.message || 'Wrong PIN')
+      setPin('')
       setBusy(false)
     }
   }
 
+  const press = (d) => {
+    if (busy) return
+    const next = (pin + d).slice(0, 4)
+    setPin(next)
+    setError(null)
+    if (next.length === 4) submit(next)
+  }
+  const back = () => setPin((p) => p.slice(0, -1))
+
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫']
+
   return (
-    <div className="min-h-full flex flex-col justify-center px-6 max-w-sm mx-auto animate-in"
-         style={{ background: 'radial-gradient(120% 60% at 50% 0%, #dcfce7 0%, #f1f5f9 55%)' }}>
-      <div className="text-center mb-8">
-        <div className="mx-auto mb-5 h-20 w-20 rounded-3xl bg-money-in flex items-center justify-center text-white text-4xl font-bold shadow-lg shadow-green-200">₹</div>
-        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Finance Tracker</h1>
-        <p className="text-slate-500 mt-2">Enter your name to continue</p>
+    <div className="min-h-full flex flex-col justify-center px-6 max-w-sm mx-auto"
+         style={{ background: 'radial-gradient(120% 55% at 50% 0%, #dcfce7 0%, #f1f5f9 55%)' }}>
+      <div className="text-center mb-6">
+        <div className="mx-auto mb-4 h-16 w-16 rounded-3xl bg-money-in flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-green-200">₹</div>
+        <h1 className="text-2xl font-extrabold text-slate-800">Finance Tracker</h1>
+        <p className="text-slate-500 mt-1">Enter your 4-digit PIN</p>
       </div>
 
-      <form onSubmit={submit} className="space-y-3">
-        <input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Your name"
-          autoCapitalize="none"
-          autoCorrect="off"
-          autoComplete="username"
-          className="field text-lg text-center"
-        />
-        {error && <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2 text-center">{error}</p>}
-        <button type="submit" disabled={busy} className="btn-primary w-full text-lg">
-          {busy ? 'Checking…' : 'Continue'}
-        </button>
-      </form>
+      {/* PIN dots */}
+      <div className="flex justify-center gap-4 mb-4">
+        {[0, 1, 2, 3].map((i) => (
+          <span key={i} className={`h-4 w-4 rounded-full border-2 ${
+            pin.length > i ? 'bg-money-in border-money-in' : 'border-slate-300'
+          }`} />
+        ))}
+      </div>
 
-      <p className="text-center text-xs text-slate-400 mt-8">Trusted internal use · no password needed</p>
+      {error && <p className="text-center text-red-600 text-sm mb-3">{error}</p>}
+
+      {/* Keypad */}
+      <div className="grid grid-cols-3 gap-3">
+        {keys.map((k, i) =>
+          k === '' ? <div key={i} /> : (
+            <button
+              key={i}
+              onClick={() => (k === '⌫' ? back() : press(k))}
+              disabled={busy}
+              className="h-16 rounded-2xl bg-white border border-slate-200 text-2xl font-semibold text-slate-700 active:bg-slate-100 shadow-sm disabled:opacity-50"
+            >
+              {k}
+            </button>
+          )
+        )}
+      </div>
     </div>
   )
 }

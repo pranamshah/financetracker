@@ -63,6 +63,8 @@ function QuickEntry({ onSaved }) {
   const [search, setSearch] = useState('')
   const [results, setResults] = useState([])
   const [customer, setCustomer] = useState(null)
+  const [loans, setLoans] = useState([])
+  const [loanId, setLoanId] = useState('')
   const [amount, setAmount] = useState('')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
@@ -87,33 +89,36 @@ function QuickEntry({ onSaved }) {
     setResults(matches.slice(0, 8))
   }, [search, customer, allCustomers])
 
-  const pick = (c) => {
+  const pick = async (c) => {
     setCustomer(c)
     setSearch(c.name)
     setResults([])
-    setTimeout(() => amountRef.current?.focus(), 0)
+    setLoanId('')
+    try {
+      const active = await api.loans(c.id, 'active')
+      setLoans(active)
+      if (active.length === 1) {
+        setLoanId(active[0].id)
+        setTimeout(() => amountRef.current?.focus(), 0)
+      }
+      // if >1, wait for the person to choose a loan below
+    } catch { setLoans([]) }
   }
 
-  const reset = () => { setCustomer(null); setSearch(''); setResults([]); setAmount('') }
+  const reset = () => { setCustomer(null); setSearch(''); setResults([]); setAmount(''); setLoans([]); setLoanId('') }
 
   const save = async () => {
     if (saving) return // guard against double Enter / double tap
     setMsg(null)
-    let c = customer
-    // If not picked but the typed name matches exactly one customer, use it.
-    if (!c) {
-      const list = await api.customers(search).catch(() => [])
-      const exact = list.filter((x) => x.name.toLowerCase() === search.trim().toLowerCase())
-      if (exact.length === 1) c = exact[0]
-      else if (list.length === 1) c = list[0]
-    }
-    if (!c) { setMsg('Pick a customer from the list'); return }
+    if (!customer) { setMsg('Pick a customer from the list'); return }
+    if (loans.length === 0) { setMsg('This customer has no active loan'); return }
+    if (!loanId) { setMsg('Choose which loan'); return }
     const amt = Number(amount)
     if (!amount || Number.isNaN(amt) || amt <= 0) { setMsg('Enter a valid amount'); return }
     setSaving(true)
     try {
-      const r = await api.collect({ customer_id: c.id, member_id: session.id, amount: Number(amount) })
-      setMsg(`Saved ₹${fmt(amount)} for ${c.name}${r.split > 1 ? ` (split across ${r.split} loans)` : ''}`)
+      await api.createEntry({ loan_id: loanId, customer_id: customer.id, member_id: session.id, amount: amt })
+      setMsg(`Saved ₹${fmt(amt)} for ${customer.name}`)
       reset()
       onSaved?.()
       setTimeout(() => nameRef.current?.focus(), 0)
@@ -169,7 +174,31 @@ function QuickEntry({ onSaved }) {
         </button>
       </div>
 
-      <p className="text-[11px] text-slate-400 mt-1.5 px-1">Type a name, enter amount, press Enter to save.</p>
+      {/* Loan picker — only when the customer has more than one active loan */}
+      {customer && loans.length > 1 && (
+        <div className="mt-2">
+          <p className="text-xs font-medium text-slate-500 mb-1 px-1">Which loan?</p>
+          <div className="flex flex-wrap gap-2">
+            {loans.map((l, i) => {
+              const bal = Number(l.total_to_receive) - Number(l.collected)
+              return (
+                <button key={l.id} type="button"
+                  onClick={() => { setLoanId(l.id); setTimeout(() => amountRef.current?.focus(), 0) }}
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold border ${
+                    loanId === l.id ? 'bg-money-in text-white border-money-in' : 'bg-white text-slate-600 border-slate-200'
+                  }`}>
+                  Loan {i + 1} · bal ₹{fmt(bal)}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+      {customer && loans.length === 0 && (
+        <p className="text-xs text-amber-600 mt-2 px-1">No active loan for this customer.</p>
+      )}
+
+      <p className="text-[11px] text-slate-400 mt-1.5 px-1">Type a name, pick loan if asked, enter amount, press Enter.</p>
       {msg && <p className="text-xs mt-1 text-slate-500 px-1">{msg}</p>}
     </div>
   )

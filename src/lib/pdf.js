@@ -103,9 +103,9 @@ export function loanHistoryPdf({ customer, loan, entries, index = 1 }) {
   save(doc, `${safe(customer.name)}_Loan${index}.pdf`)
 }
 
-// ---- Period report (Daily / Weekly / Monthly) ----------------------------
-// Grouped by customer (alphabetical); under each customer, each loan with its
-// entries for the period and a subtotal. Grand totals at the end.
+// ---- Period report (Daily / Weekly / Monthly) — grouped by DAY ------------
+// Each day lists its entries (customer, amount, collected by) with a day
+// subtotal; grand totals at the end.
 export function periodReportPdf({ range, rows, given }) {
   const doc = baseDoc()
   const label = { today: 'Daily', week: 'Weekly', month: 'Monthly' }[range] || range
@@ -115,68 +115,97 @@ export function periodReportPdf({ range, rows, given }) {
   y += 16
   doc.text(`Generated: ${today()}`, 40, y)
 
-  // Group rows: customer -> loan -> entries
-  const customers = []
-  const cIndex = {}
+  // Group rows by day.
+  const days = []
+  const idx = {}
   for (const r of rows) {
-    if (!(r.customer_id in cIndex)) {
-      cIndex[r.customer_id] = customers.length
-      customers.push({ id: r.customer_id, name: r.customer_name, phone: r.phone, loans: [], lIndex: {} })
-    }
-    const c = customers[cIndex[r.customer_id]]
-    if (!(r.loan_id in c.lIndex)) {
-      c.lIndex[r.loan_id] = c.loans.length
-      c.loans.push({ id: r.loan_id, frequency: r.frequency, entries: [] })
-    }
-    c.loans[c.lIndex[r.loan_id]].entries.push(r)
+    const key = String(r.entry_date).slice(0, 10)
+    if (!(key in idx)) { idx[key] = days.length; days.push({ key, entries: [] }) }
+    days[idx[key]].entries.push(r)
   }
 
-  let grandCollected = 0
-
-  if (customers.length === 0) {
+  let grand = 0
+  if (days.length === 0) {
     autoTable(doc, { ...tableStyle, startY: y + 12, body: [['No collections in this period']] })
     y = doc.lastAutoTable.finalY
   }
 
-  customers.forEach((c) => {
+  days.forEach((day) => {
     doc.setFont('helvetica', 'bold').setFontSize(12)
     y += 22
-    doc.text(`${c.name}${c.phone ? ` · ${c.phone}` : ''}`, 40, y)
-    let custTotal = 0
-
-    c.loans.forEach((loan, i) => {
-      doc.setFont('helvetica', 'normal').setFontSize(9)
-      const body = loan.entries.map((e) => {
-        custTotal += Number(e.amount)
-        grandCollected += Number(e.amount)
-        return [d(e.entry_date), rs(e.amount), e.member_name || '', e.note || '']
-      })
-      autoTable(doc, {
-        ...tableStyle,
-        startY: y + 6,
-        head: [[`Loan ${i + 1} (${loan.frequency}) — Date`, 'Amount', 'Collected by', 'Note']],
-        body
-      })
-      y = doc.lastAutoTable.finalY
+    doc.text(d(day.key), 40, y)
+    let dayTotal = 0
+    const body = day.entries.map((e) => {
+      dayTotal += Number(e.amount); grand += Number(e.amount)
+      return [e.customer_name, rs(e.amount), e.member_name || '', e.note || '']
     })
-
+    autoTable(doc, {
+      ...tableStyle, startY: y + 6,
+      head: [['Customer', 'Amount', 'Collected by', 'Note']],
+      body
+    })
+    y = doc.lastAutoTable.finalY
     doc.setFont('helvetica', 'bold').setFontSize(10)
     y += 14
-    doc.text(`Subtotal for ${c.name}: ${rs(custTotal)}`, 40, y)
+    doc.text(`Total for ${d(day.key)}: ${rs(dayTotal)}`, 40, y)
   })
 
-  // Grand totals
   doc.setFont('helvetica', 'bold').setFontSize(12)
   y += 28
   doc.text('Totals', 40, y)
   autoTable(doc, {
-    ...tableStyle,
-    startY: y + 6,
+    ...tableStyle, startY: y + 6,
     head: [['Collected (in)', 'New loans given (out)', 'Net']],
-    body: [[rs(grandCollected), rs(given), rs(grandCollected - given)]]
+    body: [[rs(grand), rs(given), rs(grand - given)]]
   })
 
   save(doc, `Report_${label}_${new Date().toISOString().slice(0, 10)}.pdf`)
+}
+
+// ---- Full backup: all customers, all loans, all entries (by customer) -----
+export function allDataPdf({ customers, loans, entries }) {
+  const doc = baseDoc()
+  let y = 48
+  doc.text('Finance Tracker — Full Backup', 40, y)
+  doc.setFont('helvetica', 'normal').setFontSize(10)
+  y += 16
+  doc.text(`Generated: ${today()} · ${customers.length} customers`, 40, y)
+
+  const loansByCust = {}
+  for (const l of loans) (loansByCust[l.customer_id] ||= []).push(l)
+  const entriesByLoan = {}
+  for (const e of entries) (entriesByLoan[e.loan_id] ||= []).push(e)
+
+  customers.forEach((c) => {
+    if (y > 720) { doc.addPage(); y = 48 }
+    doc.setFont('helvetica', 'bold').setFontSize(12)
+    y += 22
+    doc.text(`${c.name}${c.phone ? ` · ${c.phone}` : ''}`, 40, y)
+    const cl = loansByCust[c.id] || []
+    if (cl.length === 0) {
+      doc.setFont('helvetica', 'normal').setFontSize(9)
+      y += 14; doc.text('No loans', 40, y)
+    }
+    cl.forEach((l, i) => {
+      const collected = Number(l.collected ?? 0)
+      const balance = Number(l.total_to_receive) - collected
+      autoTable(doc, {
+        ...tableStyle, startY: y + 6,
+        head: [[`Loan ${i + 1} — Given`, 'Total', 'Collected', 'Balance', 'Freq', 'Start']],
+        body: [[rs(l.amount_given), rs(l.total_to_receive), rs(collected), rs(balance), l.frequency, d(l.start_date)]]
+      })
+      y = doc.lastAutoTable.finalY
+      const es = entriesByLoan[l.id] || []
+      autoTable(doc, {
+        ...tableStyle, startY: y + 2,
+        head: [['Date', 'Amount', 'Collected by', 'Note']],
+        body: es.length ? es.map((e) => [d(e.entry_date), rs(e.amount), e.member_name || '', e.note || '']) : [['—', 'No collections', '', '']]
+      })
+      y = doc.lastAutoTable.finalY
+    })
+  })
+
+  save(doc, `FinanceTracker_Backup_${new Date().toISOString().slice(0, 10)}.pdf`)
 }
 
 function safe(name) {

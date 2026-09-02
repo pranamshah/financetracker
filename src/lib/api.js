@@ -15,9 +15,12 @@ async function req(path, options = {}) {
 }
 
 export const api = {
-  login: (username) => req('login', { method: 'POST', body: JSON.stringify({ username }) }),
+  login: (pin) => req('login', { method: 'POST', body: JSON.stringify({ pin }) }),
   members: () => req('members'),
   memberStats: () => req('members?stats=1'),
+  allData: () => req('alldata'),
+  deleteCustomer: (id) => req(`customers?id=${id}`, { method: 'DELETE' }),
+  deleteLoan: (id) => req(`loans?id=${id}`, { method: 'DELETE' }),
 
   customers: ({ search, memberId } = {}) => {
     const p = new URLSearchParams()
@@ -50,8 +53,8 @@ export const api = {
     return req(`summary?${p.toString()}`)
   },
 
-  report: ({ range = 'today', memberId } = {}) => {
-    const p = new URLSearchParams({ range })
+  report: ({ range = 'today', memberId, group = 'day' } = {}) => {
+    const p = new URLSearchParams({ range, group })
     if (memberId) p.set('member_id', memberId)
     return req(`report?${p.toString()}`)
   }

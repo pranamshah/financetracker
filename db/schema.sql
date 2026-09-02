@@ -11,6 +11,7 @@ create table if not exists members (
   username   text not null unique,
   name       text not null,
   role       text not null default 'member' check (role in ('admin', 'member')),
+  pin        text unique,
   created_at timestamptz not null default now()
 );
 

@@ -39,6 +39,15 @@ export default async function handler(req, res) {
       return send(res, 201, rows[0])
     }
 
+    if (req.method === 'DELETE') {
+      const id = req.query.id
+      if (!id) return send(res, 400, { error: 'id required' })
+      // Cascades to this customer's loans and entries.
+      const gone = await sql`delete from customers where id = ${id} returning id`
+      if (gone.length === 0) return send(res, 404, { error: 'not found' })
+      return send(res, 200, { ok: true })
+    }
+
     return send(res, 405, { error: 'Method not allowed' })
   } catch (e) {
     return send(res, 500, { error: e.message })
