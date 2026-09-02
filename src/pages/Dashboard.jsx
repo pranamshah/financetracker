@@ -123,7 +123,7 @@ function KebabMenu() {
                   <div className={`h-full ${barColor}`} style={{ width: `${Math.max(2, pct)}%` }} />
                 </div>
                 <p className="text-xs text-slate-500 mt-1.5">
-                  {pct}% used · {(info.used_bytes / 1048576).toFixed(1)} MB of {(info.limit_bytes / 1073741824).toFixed(0)} GB
+                  {pct}% used · {(info.used_bytes / 1048576).toFixed(1)} MB of {(info.limit_bytes / 1048576).toFixed(0)} MB (your data)
                 </p>
                 <p className="text-[11px] text-slate-400 mt-2">
                   {info.customers} customers · {info.loans} loans · {info.entries} entries

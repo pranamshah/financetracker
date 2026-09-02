@@ -1,9 +1,10 @@
 import { sql, send } from './_db.js'
 
-// GET /api/storage -> approximate database size vs the free-tier limit + counts.
-// CockroachDB has no pg_database_size, so we estimate from row counts
-// (~0.5 KB per row incl. indexes) which is plenty accurate for a usage gauge.
-const FREE_LIMIT = 10 * 1024 * 1024 * 1024 // CockroachDB Basic free ~10 GB
+// GET /api/storage -> approximate size of your DATA vs the free-tier limit.
+// We estimate from row counts (~0.5 KB per row incl. indexes) rather than
+// pg_database_size, so the empty-database overhead (~30 MB) doesn't confuse
+// the gauge — this shows how much of the limit YOUR data actually uses.
+const FREE_LIMIT = 512 * 1024 * 1024 // Neon free tier ~0.5 GB
 const BYTES_PER_ROW = 512
 
 export default async function handler(req, res) {
