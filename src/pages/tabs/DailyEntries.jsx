@@ -69,6 +69,8 @@ function QuickEntry({ onSaved }) {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
   const [allCustomers, setAllCustomers] = useState([])
+  const todayIST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date())
+  const [entryDate, setEntryDate] = useState(todayIST)
   const nameRef = useRef(null)
   const amountRef = useRef(null)
 
@@ -117,8 +119,8 @@ function QuickEntry({ onSaved }) {
     if (!amount || Number.isNaN(amt) || amt <= 0) { setMsg('Enter a valid amount'); return }
     setSaving(true)
     try {
-      await api.createEntry({ loan_id: loanId, customer_id: customer.id, member_id: session.id, amount: amt })
-      setMsg(`Saved ₹${fmt(amt)} for ${customer.name}`)
+      await api.createEntry({ loan_id: loanId, customer_id: customer.id, member_id: session.id, amount: amt, entry_date: entryDate })
+      setMsg(`Saved ₹${fmt(amt)} for ${customer.name}${entryDate !== todayIST ? ` on ${entryDate}` : ''}`)
       reset()
       onSaved?.()
       setTimeout(() => nameRef.current?.focus(), 0)
@@ -131,8 +133,31 @@ function QuickEntry({ onSaved }) {
 
   const onAmountKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }
 
+  const dateShift = (n) => {
+    const [y, m, dd] = todayIST.split('-').map(Number)
+    const dt = new Date(Date.UTC(y, m - 1, dd))
+    dt.setUTCDate(dt.getUTCDate() - n)
+    return dt.toISOString().slice(0, 10)
+  }
+  const yesterday = dateShift(1)
+
   return (
     <div className="card p-3 mb-3">
+      {/* Date — default today, can pick a past day */}
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <span className="text-xs font-medium text-slate-500">Date:</span>
+        {[{ l: 'Today', v: todayIST }, { l: 'Yesterday', v: yesterday }].map((o) => (
+          <button key={o.v} type="button" onClick={() => setEntryDate(o.v)}
+            className={`rounded-lg px-2.5 py-1 text-xs font-semibold border ${
+              entryDate === o.v ? 'bg-money-in text-white border-money-in' : 'bg-white text-slate-500 border-slate-200'
+            }`}>{o.l}</button>
+        ))}
+        <input type="date" max={todayIST} value={entryDate}
+          onChange={(e) => setEntryDate(e.target.value || todayIST)}
+          className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600" />
+        {entryDate !== todayIST && <span className="text-[11px] text-amber-600 font-semibold">Back-dated</span>}
+      </div>
+
       {/* Name + amount on one line */}
       <div className="flex items-stretch gap-2">
         <div className="relative flex-1 min-w-0">

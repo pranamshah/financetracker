@@ -108,7 +108,7 @@ export function loanHistoryPdf({ customer, loan, entries, index = 1 }) {
 // subtotal; grand totals at the end.
 export function periodReportPdf({ range, rows, given }) {
   const doc = baseDoc()
-  const label = { today: 'Daily', week: 'Weekly', month: 'Monthly' }[range] || range
+  const label = { today: 'Daily', week: 'Weekly', month: 'Monthly', all: 'All Data' }[range] || range
   let y = 48
   doc.text(`${label} Report`, 40, y)
   doc.setFont('helvetica', 'normal').setFontSize(10)

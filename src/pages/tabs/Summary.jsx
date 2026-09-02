@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api.js'
 import { fmt } from '../../lib/calc.js'
-import { periodReportPdf, allDataPdf } from '../../lib/pdf.js'
+import { periodReportPdf } from '../../lib/pdf.js'
 
 const RANGES = [
   { key: 'today', label: 'Today' },
@@ -39,8 +39,9 @@ export default function Summary({ scopeId, isAdmin }) {
   const downloadAll = async () => {
     setDownloadingAll(true)
     try {
-      const data = await api.allData()
-      allDataPdf(data)
+      // Day-wise report across all time (admin sees everyone).
+      const rep = await api.report({ range: 'all', memberId: scopeId, group: 'day' })
+      periodReportPdf(rep)
     } catch (e) {
       alert(e.message)
     } finally {
