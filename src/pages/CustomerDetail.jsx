@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api.js'
 import { fmt } from '../lib/calc.js'
+import { useSession } from '../context/SessionContext.jsx'
 import LoanForm from '../components/LoanForm.jsx'
 
 export default function CustomerDetail() {
@@ -69,7 +70,7 @@ export default function CustomerDetail() {
             {loans.map((l, i) => (
               <LoanBlock key={l.id} loan={l} index={i + 1}
                 entries={entries.filter((e) => e.loan_id === l.id)}
-                customer={customer} />
+                customer={customer} onChanged={load} />
             ))}
           </div>
         </div>
@@ -102,8 +103,19 @@ function overdueDays(loan) {
   return diff > 0 ? diff : 0
 }
 
-function LoanBlock({ loan, index, entries, customer }) {
+function LoanBlock({ loan, index, entries, customer, onChanged }) {
+  const { isAdmin } = useSession()
+  const [busyId, setBusyId] = useState(null)
   const collected = Number(loan.collected)
+
+  const removeEntry = async (e) => {
+    if (!window.confirm(`Delete this entry of ₹${fmt(e.amount)}? This cannot be undone.`)) return
+    setBusyId(e.id)
+    try { await api.deleteEntry(e.id); onChanged?.() }
+    catch (err) { alert(err.message) }
+    finally { setBusyId(null) }
+  }
+
   const pending = Number(loan.total_to_receive) - collected
   const over = overdueDays(loan)
 
@@ -154,7 +166,14 @@ function LoanBlock({ loan, index, entries, customer }) {
                 <p className="text-sm font-medium">{new Date(e.entry_date).toLocaleDateString()}</p>
                 <p className="text-xs text-slate-400 truncate">{e.member_name || ''}{e.note ? ` · ${e.note}` : ''}</p>
               </div>
-              <span className="font-bold text-money-in shrink-0 whitespace-nowrap">+₹{fmt(e.amount)}</span>
+              <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+                <span className="font-bold text-money-in">+₹{fmt(e.amount)}</span>
+                {isAdmin && (
+                  <button onClick={() => removeEntry(e)} disabled={busyId === e.id}
+                    aria-label="Delete entry"
+                    className="text-slate-300 hover:text-red-500 disabled:opacity-40 text-lg leading-none px-1">×</button>
+                )}
+              </div>
             </li>
           ))}
         </ul>

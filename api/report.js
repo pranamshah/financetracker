@@ -11,9 +11,9 @@ export default async function handler(req, res) {
     const member_id = req.query.member_id || null
 
     const startExpr = {
-      today: sql`current_date`,
-      week: sql`date_trunc('week', current_date)`,
-      month: sql`date_trunc('month', current_date)`
+      today: sql`(now() at time zone 'Asia/Kolkata')::date`,
+      week: sql`date_trunc('week', (now() at time zone 'Asia/Kolkata')::date)`,
+      month: sql`date_trunc('month', (now() at time zone 'Asia/Kolkata')::date)`
     }[range] || sql`current_date`
 
     const rows = await sql`

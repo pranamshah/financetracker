@@ -34,8 +34,9 @@ export default async function handler(req, res) {
       const pay = isLast ? left : Math.min(remaining, left)
       if (pay <= 0) continue
       const row = await sql`
-        insert into entries (loan_id, customer_id, member_id, amount, note)
-        values (${l.id}, ${customer_id}, ${member_id || null}, ${pay}, ${note || null})
+        insert into entries (loan_id, customer_id, member_id, amount, note, entry_date)
+        values (${l.id}, ${customer_id}, ${member_id || null}, ${pay}, ${note || null},
+                (now() at time zone 'Asia/Kolkata')::date)
         returning *`
       created.push(row[0])
       left -= pay
@@ -50,8 +51,9 @@ export default async function handler(req, res) {
     if (created.length === 0) {
       const l = loans[loans.length - 1]
       const row = await sql`
-        insert into entries (loan_id, customer_id, member_id, amount, note)
-        values (${l.id}, ${customer_id}, ${member_id || null}, ${amount}, ${note || null})
+        insert into entries (loan_id, customer_id, member_id, amount, note, entry_date)
+        values (${l.id}, ${customer_id}, ${member_id || null}, ${amount}, ${note || null},
+                (now() at time zone 'Asia/Kolkata')::date)
         returning *`
       created.push(row[0])
     }

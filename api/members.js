@@ -12,9 +12,9 @@ export default async function handler(req, res) {
         select
           m.id, m.name, m.role,
           (select coalesce(sum(e.amount),0) from entries e
-             where e.member_id = m.id and e.entry_date = current_date) as today_collected,
+             where e.member_id = m.id and e.entry_date = (now() at time zone 'Asia/Kolkata')::date) as today_collected,
           (select count(*) from entries e
-             where e.member_id = m.id and e.entry_date = current_date) as today_entries,
+             where e.member_id = m.id and e.entry_date = (now() at time zone 'Asia/Kolkata')::date) as today_entries,
           (select count(distinct c.id) from customers c where c.added_by = m.id) as customers
         from members m
         order by (m.role = 'admin') desc, lower(m.name) asc`

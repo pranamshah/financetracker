@@ -42,6 +42,7 @@ export const api = {
   },
   createEntry: (body) => req('entries', { method: 'POST', body: JSON.stringify(body) }),
   collect: (body) => req('collect', { method: 'POST', body: JSON.stringify(body) }),
+  deleteEntry: (id) => req(`entries?id=${id}`, { method: 'DELETE' }),
 
   summary: ({ range = 'today', memberId } = {}) => {
     const p = new URLSearchParams({ range })

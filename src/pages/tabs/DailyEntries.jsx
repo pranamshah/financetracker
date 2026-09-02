@@ -97,6 +97,7 @@ function QuickEntry({ onSaved }) {
   const reset = () => { setCustomer(null); setSearch(''); setResults([]); setAmount('') }
 
   const save = async () => {
+    if (saving) return // guard against double Enter / double tap
     setMsg(null)
     let c = customer
     // If not picked but the typed name matches exactly one customer, use it.
@@ -107,7 +108,8 @@ function QuickEntry({ onSaved }) {
       else if (list.length === 1) c = list[0]
     }
     if (!c) { setMsg('Pick a customer from the list'); return }
-    if (!amount || Number(amount) <= 0) { setMsg('Enter an amount'); return }
+    const amt = Number(amount)
+    if (!amount || Number.isNaN(amt) || amt <= 0) { setMsg('Enter a valid amount'); return }
     setSaving(true)
     try {
       const r = await api.collect({ customer_id: c.id, member_id: session.id, amount: Number(amount) })
