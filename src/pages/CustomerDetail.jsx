@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api.js'
 import { fmt } from '../lib/calc.js'
 import { useSession } from '../context/SessionContext.jsx'
+import { customerHistoryPdf, loanHistoryPdf } from '../lib/pdf.js'
 import LoanForm from '../components/LoanForm.jsx'
 
 export default function CustomerDetail() {
@@ -43,7 +44,7 @@ export default function CustomerDetail() {
           <button onClick={() => navigate(-1)} className="text-slate-500 text-xl">‹</button>
           <h1 className="font-bold text-lg flex-1 truncate">{customer.name}</h1>
           <button
-            onClick={async () => { const { customerHistoryPdf } = await import('../lib/pdf.js'); customerHistoryPdf(data) }}
+            onClick={() => customerHistoryPdf(data)}
             className="text-xs font-semibold text-money-in border border-money-in rounded-lg px-2.5 py-1.5"
           >
             PDF
@@ -138,10 +139,7 @@ function LoanBlock({ loan, index, entries, customer, onChanged }) {
   const pending = Number(loan.total_to_receive) - collected
   const over = overdueDays(loan)
 
-  const downloadLoan = async () => {
-    const { loanHistoryPdf } = await import('../lib/pdf.js')
-    loanHistoryPdf({ customer, loan, entries, index })
-  }
+  const downloadLoan = () => loanHistoryPdf({ customer, loan, entries, index })
 
   return (
     <div className="card p-4">

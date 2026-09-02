@@ -44,12 +44,14 @@ export default function Login() {
         <p className="text-slate-500 mt-1">Enter your 4-digit PIN</p>
       </div>
 
-      {/* PIN dots */}
-      <div className="flex justify-center gap-4 mb-4">
+      {/* PIN boxes — show each digit as it's typed */}
+      <div className="flex justify-center gap-3 mb-5">
         {[0, 1, 2, 3].map((i) => (
-          <span key={i} className={`h-4 w-4 rounded-full border-2 ${
-            pin.length > i ? 'bg-money-in border-money-in' : 'border-slate-300'
-          }`} />
+          <div key={i} className={`h-14 w-12 rounded-xl border-2 flex items-center justify-center text-2xl font-bold bg-white ${
+            pin.length > i ? 'border-money-in text-slate-800' : 'border-slate-300 text-slate-300'
+          }`}>
+            {pin[i] ?? ''}
+          </div>
         ))}
       </div>
 

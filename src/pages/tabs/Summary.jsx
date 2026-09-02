@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api.js'
 import { fmt } from '../../lib/calc.js'
+import { periodReportPdf, allDataPdf } from '../../lib/pdf.js'
 
 const RANGES = [
   { key: 'today', label: 'Today' },
@@ -26,7 +27,6 @@ export default function Summary({ scopeId, isAdmin }) {
     setDownloading(true)
     try {
       const rep = await api.report({ range, memberId: scopeId, group: 'day' })
-      const { periodReportPdf } = await import('../../lib/pdf.js')
       periodReportPdf(rep)
     } catch (e) {
       alert(e.message)
@@ -40,7 +40,6 @@ export default function Summary({ scopeId, isAdmin }) {
     setDownloadingAll(true)
     try {
       const data = await api.allData()
-      const { allDataPdf } = await import('../../lib/pdf.js')
       allDataPdf(data)
     } catch (e) {
       alert(e.message)
@@ -72,12 +71,6 @@ export default function Summary({ scopeId, isAdmin }) {
           <div className="grid grid-cols-2 gap-3">
             <Stat label="Collected (in)" value={`₹${fmt(data.collected)}`} tone="in" />
             <Stat label="Given (out)" value={`₹${fmt(data.given)}`} tone="out" />
-          </div>
-          <div className={`rounded-xl p-4 border ${data.net >= 0 ? 'bg-green-50 border-green-100' : 'bg-orange-50 border-orange-100'}`}>
-            <p className="text-xs font-medium text-slate-500">Net</p>
-            <p className={`text-2xl font-bold ${data.net >= 0 ? 'text-money-in' : 'text-money-out'}`}>
-              ₹{fmt(data.net)}
-            </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Stat label="Entries" value={data.entry_count} tone="plain" />
