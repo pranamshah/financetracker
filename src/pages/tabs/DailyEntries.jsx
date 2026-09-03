@@ -20,64 +20,53 @@ export default function DailyEntries({ scopeId }) {
   const today = todayIST()
   const yesterday = dateShiftIST(1)
 
-  // viewDate controls which day's entries are displayed.
-  const [viewDate, setViewDate] = useState(today)
+  // One date controls both what is shown AND what new entries are saved as.
+  const [date, setDate] = useState(today)
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
 
   const load = (silent = false) => {
     if (!silent) setLoading(true)
-    api.entries({ memberId: scopeId, date: viewDate })
+    api.entries({ memberId: scopeId, date })
       .then(setEntries)
       .catch(() => setEntries([]))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [scopeId, viewDate])
+  useEffect(() => { load() }, [scopeId, date])
   useAutoRefresh(() => load(true))
 
   const total = entries.reduce((s, e) => s + Number(e.amount), 0)
-
-  const isToday = viewDate === today
-  const isYesterday = viewDate === yesterday
+  const label = date === today ? 'today' : date === yesterday ? 'yesterday' : date
 
   return (
     <div>
-      {/* View-date selector */}
+      {/* Single date selector — controls view + new entries */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className="text-xs font-medium text-slate-500">Showing:</span>
         {[{ l: 'Today', v: today }, { l: 'Yesterday', v: yesterday }].map((o) => (
-          <button key={o.v} type="button" onClick={() => setViewDate(o.v)}
+          <button key={o.v} type="button" onClick={() => setDate(o.v)}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold border ${
-              viewDate === o.v ? 'bg-money-in text-white border-money-in' : 'bg-white text-slate-500 border-slate-200'
+              date === o.v ? 'bg-money-in text-white border-money-in' : 'bg-white text-slate-500 border-slate-200'
             }`}>{o.l}</button>
         ))}
-        <input type="date" max={today} value={viewDate}
-          onChange={(e) => setViewDate(e.target.value || today)}
+        <input type="date" max={today} value={date}
+          onChange={(e) => setDate(e.target.value || today)}
           className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600" />
-        {!isToday && !isYesterday && (
-          <span className="text-[11px] text-amber-600 font-semibold">
-            {new Date(viewDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-          </span>
-        )}
+        {date !== today && <span className="text-[11px] text-amber-600 font-semibold">Back-dated</span>}
       </div>
 
-      <QuickEntry scopeId={scopeId} onSaved={() => load(true)} />
+      <QuickEntry scopeId={scopeId} entryDate={date} onSaved={() => load(true)} />
 
       {!loading && entries.length > 0 && (
         <div className="mb-3 rounded-2xl bg-green-50 border border-green-100 px-4 py-3">
-          <p className="text-xs text-green-700 font-medium">
-            {isToday ? 'Collected today' : isYesterday ? 'Collected yesterday' : `Collected on ${viewDate}`}
-          </p>
+          <p className="text-xs text-green-700 font-medium">Collected {label}</p>
           <p className="text-2xl font-bold text-money-in">₹{fmt(total)}</p>
         </div>
       )}
 
       {loading && <p className="text-slate-400 text-center py-8">Loading…</p>}
       {!loading && entries.length === 0 && (
-        <p className="text-center text-slate-400 py-10">
-          No entries for {isToday ? 'today' : isYesterday ? 'yesterday' : viewDate}
-        </p>
+        <p className="text-center text-slate-400 py-10">No entries for {label}</p>
       )}
 
       <ul className="space-y-2">
@@ -98,12 +87,9 @@ export default function DailyEntries({ scopeId }) {
   )
 }
 
-// Always-visible quick entry: type/pick customer, type amount, press Enter.
-function QuickEntry({ scopeId, onSaved }) {
+// Quick entry — entryDate comes from the parent date selector.
+function QuickEntry({ scopeId, entryDate, onSaved }) {
   const { session } = useSession()
-  const today = todayIST()
-  const yesterday = dateShiftIST(1)
-
   const [search, setSearch] = useState('')
   const [results, setResults] = useState([])
   const [customer, setCustomer] = useState(null)
@@ -113,7 +99,6 @@ function QuickEntry({ scopeId, onSaved }) {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
   const [allCustomers, setAllCustomers] = useState([])
-  const [entryDate, setEntryDate] = useState(today)
   const nameRef = useRef(null)
   const amountRef = useRef(null)
 
@@ -153,7 +138,7 @@ function QuickEntry({ scopeId, onSaved }) {
     setSaving(true)
     try {
       await api.createEntry({ loan_id: loanId, customer_id: customer.id, member_id: session.id, amount: amt, entry_date: entryDate })
-      setMsg(`Saved ₹${fmt(amt)} for ${customer.name}${entryDate !== today ? ` on ${entryDate}` : ''}`)
+      setMsg(`Saved ₹${fmt(amt)} for ${customer.name}`)
       reset()
       onSaved?.()
       setTimeout(() => nameRef.current?.focus(), 0)
@@ -166,21 +151,6 @@ function QuickEntry({ scopeId, onSaved }) {
 
   return (
     <div className="card p-3 mb-3">
-      {/* Entry date — separate from view date above */}
-      <div className="flex items-center gap-2 mb-2 flex-wrap">
-        <span className="text-xs font-medium text-slate-500">Add for:</span>
-        {[{ l: 'Today', v: today }, { l: 'Yesterday', v: yesterday }].map((o) => (
-          <button key={o.v} type="button" onClick={() => setEntryDate(o.v)}
-            className={`rounded-lg px-2.5 py-1 text-xs font-semibold border ${
-              entryDate === o.v ? 'bg-money-in text-white border-money-in' : 'bg-white text-slate-500 border-slate-200'
-            }`}>{o.l}</button>
-        ))}
-        <input type="date" max={today} value={entryDate}
-          onChange={(e) => setEntryDate(e.target.value || today)}
-          className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600" />
-        {entryDate !== today && <span className="text-[11px] text-amber-600 font-semibold">Back-dated</span>}
-      </div>
-
       <div className="flex items-stretch gap-2">
         <div className="relative flex-1 min-w-0">
           <input
