@@ -56,7 +56,7 @@ function ensureReady() {
       try {
         await c`select 1 from members limit 1` // fast existence check
       } catch {
-        for (const stmt of INIT_STATEMENTS) await c.query(stmt)
+        for (const stmt of INIT_STATEMENTS) await c([stmt])
       }
     })().catch((e) => { ready = null; throw e })
   }
