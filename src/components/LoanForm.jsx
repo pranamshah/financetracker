@@ -14,6 +14,8 @@ export default function LoanForm({ customerId, onSaved, onCancel }) {
   const [tenureDays, setTenureDays] = useState('')
   const [frequency, setFrequency] = useState('daily')
   const [totalToReceive, setTotalToReceive] = useState('')
+  const todayIST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date())
+  const [startDate, setStartDate] = useState(todayIST)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -38,7 +40,7 @@ export default function LoanForm({ customerId, onSaved, onCancel }) {
         frequency,
         installment_count: calc.installment_count,
         installment_amount: calc.installment_amount,
-        start_date: new Date().toISOString().slice(0, 10),
+        start_date: startDate,
         created_by: session.id
       })
       onSaved?.(loan)
@@ -76,6 +78,13 @@ export default function LoanForm({ customerId, onSaved, onCancel }) {
             </button>
           ))}
         </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-slate-600">Loan start date</label>
+        <input type="date" max={todayIST} value={startDate}
+          onChange={(e) => setStartDate(e.target.value || todayIST)}
+          className={`${field} mt-1`} />
       </div>
 
       <div>
