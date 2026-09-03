@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api.js'
 import { fmt } from '../../lib/calc.js'
-import { periodReportPdf } from '../../lib/pdf.js'
+import { periodReportPdf, periodReportXlsx, allDataXlsx } from '../../lib/pdf.js'
 
 const RANGES = [
   { key: 'today', label: 'Today' },
@@ -35,17 +35,42 @@ export default function Summary({ scopeId, isAdmin }) {
     }
   }
 
+  const [downloadingXlsx, setDownloadingXlsx] = useState(false)
+  const downloadXlsx = async () => {
+    setDownloadingXlsx(true)
+    try {
+      const rep = await api.report({ range, memberId: scopeId, group: 'day' })
+      periodReportXlsx(rep)
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      setDownloadingXlsx(false)
+    }
+  }
+
   const [downloadingAll, setDownloadingAll] = useState(false)
   const downloadAll = async () => {
     setDownloadingAll(true)
     try {
-      // Day-wise report across all time (admin sees everyone).
       const rep = await api.report({ range: 'all', memberId: scopeId, group: 'day' })
       periodReportPdf(rep)
     } catch (e) {
       alert(e.message)
     } finally {
       setDownloadingAll(false)
+    }
+  }
+
+  const [downloadingAllXlsx, setDownloadingAllXlsx] = useState(false)
+  const downloadAllXlsx = async () => {
+    setDownloadingAllXlsx(true)
+    try {
+      const data = await api.allData()
+      allDataXlsx(data)
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      setDownloadingAllXlsx(false)
     }
   }
 
@@ -78,22 +103,41 @@ export default function Summary({ scopeId, isAdmin }) {
             <Stat label="New customers" value={data.new_customers} tone="plain" />
           </div>
 
-          <button
-            onClick={downloadPdf}
-            disabled={downloading}
-            className="w-full rounded-xl border border-money-in text-money-in font-semibold py-3 disabled:opacity-50"
-          >
-            {downloading ? 'Preparing…' : `Download ${RANGES.find((r) => r.key === range).label} PDF (day-wise)`}
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={downloadPdf}
+              disabled={downloading}
+              className="rounded-xl border border-money-in text-money-in font-semibold py-3 text-sm disabled:opacity-50"
+            >
+              {downloading ? 'Preparing…' : `📄 PDF`}
+            </button>
+            <button
+              onClick={downloadXlsx}
+              disabled={downloadingXlsx}
+              className="rounded-xl border border-blue-500 text-blue-600 font-semibold py-3 text-sm disabled:opacity-50"
+            >
+              {downloadingXlsx ? 'Preparing…' : `📊 Excel`}
+            </button>
+          </div>
+          <p className="text-xs text-slate-400 text-center -mt-1">{RANGES.find((r) => r.key === range)?.label} report</p>
 
           {isAdmin && (
-            <button
-              onClick={downloadAll}
-              disabled={downloadingAll}
-              className="w-full rounded-xl bg-slate-800 text-white font-semibold py-3 disabled:opacity-50"
-            >
-              {downloadingAll ? 'Preparing…' : 'Download ALL data (backup PDF)'}
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={downloadAll}
+                disabled={downloadingAll}
+                className="rounded-xl bg-slate-800 text-white font-semibold py-3 text-sm disabled:opacity-50"
+              >
+                {downloadingAll ? 'Preparing…' : '📄 All Data PDF'}
+              </button>
+              <button
+                onClick={downloadAllXlsx}
+                disabled={downloadingAllXlsx}
+                className="rounded-xl bg-green-700 text-white font-semibold py-3 text-sm disabled:opacity-50"
+              >
+                {downloadingAllXlsx ? 'Preparing…' : '📊 All Data Excel'}
+              </button>
+            </div>
           )}
         </div>
       )}

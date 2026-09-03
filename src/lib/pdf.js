@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import * as XLSX from 'xlsx'
 import { fmt } from './calc.js'
 
 // Use "Rs." rather than the ₹ glyph: the built-in PDF fonts don't include the
@@ -189,6 +190,68 @@ export function allDataPdf({ customers, loans, entries }) {
   })
 
   save(doc, `FinanceTracker_Backup_${new Date().toISOString().slice(0, 10)}.pdf`)
+}
+
+// ---- Excel: Period report (day-wise, same data as PDF) --------------------
+export function periodReportXlsx({ range, rows }) {
+  const label = { today: 'Daily', week: 'Weekly', month: 'Monthly', all: 'All_Data' }[range] || range
+  const data = rows.map((r) => ({
+    Date: String(r.entry_date).slice(0, 10),
+    Customer: r.customer_name,
+    'Amount (Rs)': Number(r.amount),
+    'Collected By': r.member_name || '',
+    Note: r.note || ''
+  }))
+  const ws = XLSX.utils.json_to_sheet(data)
+  // Column widths
+  ws['!cols'] = [{ wch: 12 }, { wch: 28 }, { wch: 14 }, { wch: 18 }, { wch: 24 }]
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, label)
+  XLSX.writeFile(wb, `Report_${label}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+}
+
+// ---- Excel: Full backup (customers + loans + entries) ----------------------
+export function allDataXlsx({ customers, loans, entries }) {
+  const wb = XLSX.utils.book_new()
+
+  // Sheet 1: Customers
+  const custSheet = XLSX.utils.json_to_sheet(customers.map((c) => ({
+    Name: c.name, Phone: c.phone || ''
+  })))
+  custSheet['!cols'] = [{ wch: 28 }, { wch: 16 }]
+  XLSX.utils.book_append_sheet(wb, custSheet, 'Customers')
+
+  // Build name lookup
+  const custName = {}
+  for (const c of customers) custName[c.id] = c.name
+
+  // Sheet 2: Loans
+  const loanSheet = XLSX.utils.json_to_sheet(loans.map((l) => ({
+    Customer: custName[l.customer_id] || l.customer_id,
+    'Given (Rs)': Number(l.amount_given),
+    'Interest (Rs)': Number(l.interest_amount),
+    'Total (Rs)': Number(l.total_to_receive),
+    'Collected (Rs)': Number(l.collected ?? 0),
+    'Balance (Rs)': Number(l.total_to_receive) - Number(l.collected ?? 0),
+    Frequency: l.frequency,
+    'Start Date': String(l.start_date).slice(0, 10),
+    Status: l.status
+  })))
+  loanSheet['!cols'] = [{ wch: 28 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 8 }]
+  XLSX.utils.book_append_sheet(wb, loanSheet, 'Loans')
+
+  // Sheet 3: All Entries
+  const entrySheet = XLSX.utils.json_to_sheet(entries.map((e) => ({
+    Date: String(e.entry_date).slice(0, 10),
+    Customer: custName[e.customer_id] || e.customer_id,
+    'Amount (Rs)': Number(e.amount),
+    'Collected By': e.member_name || '',
+    Note: e.note || ''
+  })))
+  entrySheet['!cols'] = [{ wch: 12 }, { wch: 28 }, { wch: 14 }, { wch: 18 }, { wch: 24 }]
+  XLSX.utils.book_append_sheet(wb, entrySheet, 'Entries')
+
+  XLSX.writeFile(wb, `FinanceTracker_Backup_${new Date().toISOString().slice(0, 10)}.xlsx`)
 }
 
 function safe(name) {
