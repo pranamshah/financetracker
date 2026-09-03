@@ -24,6 +24,21 @@ export default function DailyEntries({ scopeId }) {
   const [date, setDate] = useState(today)
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
+  const [confirmId, setConfirmId] = useState(null) // entry id awaiting delete confirm
+  const [deleting, setDeleting] = useState(false)
+
+  const deleteEntry = async (id) => {
+    setDeleting(true)
+    try {
+      await api.deleteEntry(id)
+      setEntries((prev) => prev.filter((e) => e.id !== id))
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      setConfirmId(null)
+      setDeleting(false)
+    }
+  }
 
   const load = (silent = false) => {
     if (!silent) setLoading(true)
@@ -71,15 +86,37 @@ export default function DailyEntries({ scopeId }) {
 
       <ul className="space-y-2">
         {entries.map((e) => (
-          <li key={e.id} className="card px-4 py-3 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-semibold text-slate-800 truncate">{e.customer_name}</p>
-              <p className="text-xs text-slate-400 truncate">
-                {new Date(e.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                {e.member_name ? ` · ${e.member_name}` : ''}
-              </p>
-            </div>
-            <span className="font-bold text-money-in shrink-0 whitespace-nowrap">+₹{fmt(e.amount)}</span>
+          <li key={e.id} className="card px-4 py-3">
+            {confirmId === e.id ? (
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-slate-700">Delete ₹{fmt(e.amount)} for <b>{e.customer_name}</b>?</p>
+                <div className="flex gap-2 shrink-0">
+                  <button onClick={() => deleteEntry(e.id)} disabled={deleting}
+                    className="rounded-lg bg-red-500 text-white text-xs font-bold px-3 py-1.5 disabled:opacity-50">
+                    Yes
+                  </button>
+                  <button onClick={() => setConfirmId(null)} disabled={deleting}
+                    className="rounded-lg border border-slate-300 text-xs font-semibold px-3 py-1.5">
+                    No
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-800 truncate">{e.customer_name}</p>
+                  <p className="text-xs text-slate-400 truncate">
+                    {new Date(e.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {e.member_name ? ` · ${e.member_name}` : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="font-bold text-money-in whitespace-nowrap">+₹{fmt(e.amount)}</span>
+                  <button onClick={() => setConfirmId(e.id)}
+                    className="text-slate-300 hover:text-red-500 text-xl leading-none px-1">×</button>
+                </div>
+              </div>
+            )}
           </li>
         ))}
       </ul>
