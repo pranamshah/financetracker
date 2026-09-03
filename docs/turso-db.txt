@@ -1,0 +1,202 @@
+TURSO DB MIGRATION GUIDE
+========================
+
+Turso gives 9 GB free storage (vs Neon's 512 MB).
+If you ever need more space, switch to Turso. Same process as Neon swap.
+
+------------------------------------------------------------
+STEP 1 — Create Turso database (one time, free)
+------------------------------------------------------------
+1. Go to https://turso.tech → Sign up (free)
+2. Create a database → give it any name (e.g. financetracker)
+3. Go to Settings → Get the two values you need:
+   - TURSO_DB_URL   → looks like: libsql://financetracker-username.turso.io
+   - TURSO_AUTH_TOKEN → a long string starting with eyJ...
+
+------------------------------------------------------------
+STEP 2 — Install Turso driver (run once in your project)
+------------------------------------------------------------
+npm install @libsql/client
+
+------------------------------------------------------------
+STEP 3 — Replace api/_db.js with this code
+------------------------------------------------------------
+(Copy everything between the === lines into api/_db.js)
+
+=== START OF api/_db.js FOR TURSO ===
+
+import { createClient } from '@libsql/client'
+
+let _client
+function client() {
+  if (!_client) {
+    _client = createClient({
+      url: process.env.TURSO_DB_URL,
+      authToken: process.env.TURSO_AUTH_TOKEN
+    })
+  }
+  return _client
+}
+
+// sql tagged template — converts Neon-style ${param} to Turso positional args
+export function sql(strings, ...values) {
+  let query = ''
+  const args = []
+  strings.forEach((s, i) => {
+    query += s
+    if (i < values.length) {
+      // Handle ::date and ::uuid casts — strip the type cast, pass value as-is
+      const v = values[i]
+      if (query.endsWith('::date')) {
+        query = query.slice(0, -6) + '?'
+      } else if (query.endsWith('::uuid')) {
+        query = query.slice(0, -6) + '?'
+      } else if (query.endsWith('::text')) {
+        query = query.slice(0, -6) + '?'
+      } else {
+        query += '?'
+      }
+      args.push(v === undefined ? null : v)
+    }
+  })
+  return ensureReady().then(() => client().execute({ sql: query, args }).then((r) => r.rows))
+}
+
+const INIT_STATEMENTS = [
+  `create table if not exists members (
+     id text primary key default (lower(hex(randomblob(16)))),
+     username text not null unique, name text not null,
+     role text not null default 'member' check (role in ('admin','member')),
+     pin text unique, created_at text not null default (datetime('now')))`,
+  `create table if not exists customers (
+     id text primary key default (lower(hex(randomblob(16)))),
+     name text not null, phone text, address text,
+     added_by text references members(id), created_at text not null default (datetime('now')))`,
+  `create table if not exists loans (
+     id text primary key default (lower(hex(randomblob(16)))),
+     customer_id text not null references customers(id) on delete cascade,
+     amount_given real not null, interest_amount real not null default 0,
+     total_to_receive real not null, tenure_days integer not null,
+     frequency text not null check (frequency in ('daily','weekly','monthly','yearly')),
+     installment_count integer not null, installment_amount real not null,
+     start_date text not null default (date('now')),
+     status text not null default 'active' check (status in ('active','closed')),
+     created_by text references members(id), created_at text not null default (datetime('now')))`,
+  `create table if not exists entries (
+     id text primary key default (lower(hex(randomblob(16)))),
+     loan_id text not null references loans(id) on delete cascade,
+     customer_id text not null references customers(id) on delete cascade,
+     member_id text references members(id), amount real not null,
+     entry_date text not null default (date('now')), note text,
+     created_at text not null default (datetime('now')))`,
+  `create index if not exists idx_loans_customer on loans(customer_id)`,
+  `create index if not exists idx_entries_loan on entries(loan_id)`,
+  `create index if not exists idx_entries_customer on entries(customer_id)`,
+  `create index if not exists idx_entries_date on entries(entry_date)`,
+  `create index if not exists idx_entries_member on entries(member_id)`,
+  `insert or ignore into members (id, username, name, role, pin) values
+     (lower(hex(randomblob(16))), 'sailesh', 'Sailesh', 'admin', '2904'),
+     (lower(hex(randomblob(16))), 'sarath', 'Sarath', 'member', '0000')`
+]
+
+let ready
+function ensureReady() {
+  if (!ready) {
+    ready = (async () => {
+      const c = client()
+      try {
+        await c.execute('select 1 from members limit 1')
+      } catch {
+        for (const stmt of INIT_STATEMENTS) await c.execute(stmt)
+      }
+    })().catch((e) => { ready = null; throw e })
+  }
+  return ready
+}
+
+export function send(res, status, body) {
+  res.setHeader('Content-Type', 'application/json')
+  res.status(status).json(body)
+}
+
+export function istStart(range) {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit'
+  })
+  const todayStr = fmt.format(new Date())
+  if (range === 'all') return '1970-01-01'
+  if (range === 'week') {
+    const [y, m, d] = todayStr.split('-').map(Number)
+    const dt = new Date(Date.UTC(y, m - 1, d))
+    const dow = dt.getUTCDay()
+    dt.setUTCDate(dt.getUTCDate() - (dow === 0 ? 6 : dow - 1))
+    return dt.toISOString().slice(0, 10)
+  }
+  if (range === 'month') return todayStr.slice(0, 7) + '-01'
+  return todayStr
+}
+
+export async function readBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body
+  if (typeof req.body === 'string' && req.body) return JSON.parse(req.body)
+  const chunks = []
+  for await (const c of req) chunks.push(c)
+  if (!chunks.length) return {}
+  return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+}
+
+=== END OF api/_db.js FOR TURSO ===
+
+------------------------------------------------------------
+STEP 4 — Update Vercel environment variables
+------------------------------------------------------------
+Go to Vercel → project → Settings → Environment Variables
+
+ADD two new variables (Production only):
+  TURSO_DB_URL       = libsql://your-db.turso.io
+  TURSO_AUTH_TOKEN   = eyJ...your token...
+
+You can DELETE DATABASE_URL after this (or keep it, it won't be used).
+
+IMPORTANT: Also update vercel.json region if needed.
+Turso has edge replicas — it auto-routes to the nearest region.
+You can remove "regions": ["sin1"] or keep it; both work.
+
+------------------------------------------------------------
+STEP 5 — Redeploy
+------------------------------------------------------------
+Vercel → Deployments → newest → ⋯ → Redeploy → confirm.
+Wait ~1 minute. App will be fresh and empty — tables auto-created on first login.
+
+------------------------------------------------------------
+ALSO NOTE — SQL dialect differences (Turso = SQLite)
+------------------------------------------------------------
+After switching, some SQL in the API files needs small fixes:
+- Replace: gen_random_uuid()      → lower(hex(randomblob(16)))
+- Replace: timestamptz            → text
+- Replace: (now() at time zone 'Asia/Kolkata')::date  → date('now')
+- Replace: current_date           → date('now')
+- Replace: on conflict (x) do nothing  → insert or ignore into
+- Remove: ::date, ::uuid, ::text casts (SQLite ignores types)
+- coalesce() works the same way
+
+These replacements are already in the INIT_STATEMENTS above.
+The sql() function above strips ::date/::uuid/::text from queries automatically.
+But you still need to fix the other patterns in individual API files manually
+(entries.js, loans.js, customers.js, summary.js, report.js).
+
+------------------------------------------------------------
+STORAGE COMPARISON
+------------------------------------------------------------
+Neon (current):   512 MB free  — enough for ~5 years of daily data
+Turso:            9 GB free    — enough for ~85 years of daily data
+Supabase:         500 MB free  — similar to Neon
+PlanetScale:      5 GB free    — MySQL (different SQL dialect)
+
+RECOMMENDATION:
+Stay on Neon until it reaches 80% full (check ⋮ menu → Storage).
+At that point, either:
+  A) Swap to a new Neon DB (same process, 5 min, zero coding)
+  B) Migrate to Turso for much more space (follow this guide)
+
+Both options preserve all your history — just download the backup Excel first.

@@ -54,9 +54,11 @@ export const api = {
     return req(`summary?${p.toString()}`)
   },
 
-  report: ({ range = 'today', memberId, group = 'day' } = {}) => {
+  report: ({ range = 'today', memberId, group = 'day', from, to } = {}) => {
     const p = new URLSearchParams({ range, group })
     if (memberId) p.set('member_id', memberId)
+    if (from) p.set('from', from)
+    if (to) p.set('to', to)
     return req(`report?${p.toString()}`)
   }
 }

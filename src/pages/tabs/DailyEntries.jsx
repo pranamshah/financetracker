@@ -5,37 +5,79 @@ import { fmt } from '../../lib/calc.js'
 import { useAutoRefresh } from '../../lib/useAutoRefresh.js'
 import MicButton from '../../components/MicButton.jsx'
 
+const todayIST = () =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date())
+
+function dateShiftIST(n) {
+  const t = todayIST()
+  const [y, m, d] = t.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  dt.setUTCDate(dt.getUTCDate() - n)
+  return dt.toISOString().slice(0, 10)
+}
+
 export default function DailyEntries({ scopeId }) {
+  const today = todayIST()
+  const yesterday = dateShiftIST(1)
+
+  // viewDate controls which day's entries are displayed.
+  const [viewDate, setViewDate] = useState(today)
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
 
   const load = (silent = false) => {
     if (!silent) setLoading(true)
-    api.entries({ memberId: scopeId, date: 'today' })
+    api.entries({ memberId: scopeId, date: viewDate })
       .then(setEntries)
       .catch(() => setEntries([]))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [scopeId])
+  useEffect(() => { load() }, [scopeId, viewDate])
   useAutoRefresh(() => load(true))
 
   const total = entries.reduce((s, e) => s + Number(e.amount), 0)
 
+  const isToday = viewDate === today
+  const isYesterday = viewDate === yesterday
+
   return (
     <div>
+      {/* View-date selector */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className="text-xs font-medium text-slate-500">Showing:</span>
+        {[{ l: 'Today', v: today }, { l: 'Yesterday', v: yesterday }].map((o) => (
+          <button key={o.v} type="button" onClick={() => setViewDate(o.v)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold border ${
+              viewDate === o.v ? 'bg-money-in text-white border-money-in' : 'bg-white text-slate-500 border-slate-200'
+            }`}>{o.l}</button>
+        ))}
+        <input type="date" max={today} value={viewDate}
+          onChange={(e) => setViewDate(e.target.value || today)}
+          className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600" />
+        {!isToday && !isYesterday && (
+          <span className="text-[11px] text-amber-600 font-semibold">
+            {new Date(viewDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+          </span>
+        )}
+      </div>
+
       <QuickEntry scopeId={scopeId} onSaved={() => load(true)} />
 
       {!loading && entries.length > 0 && (
         <div className="mb-3 rounded-2xl bg-green-50 border border-green-100 px-4 py-3">
-          <p className="text-xs text-green-700 font-medium">Collected today</p>
+          <p className="text-xs text-green-700 font-medium">
+            {isToday ? 'Collected today' : isYesterday ? 'Collected yesterday' : `Collected on ${viewDate}`}
+          </p>
           <p className="text-2xl font-bold text-money-in">₹{fmt(total)}</p>
         </div>
       )}
 
       {loading && <p className="text-slate-400 text-center py-8">Loading…</p>}
       {!loading && entries.length === 0 && (
-        <p className="text-center text-slate-400 py-10">No entries yet today</p>
+        <p className="text-center text-slate-400 py-10">
+          No entries for {isToday ? 'today' : isYesterday ? 'yesterday' : viewDate}
+        </p>
       )}
 
       <ul className="space-y-2">
@@ -57,9 +99,11 @@ export default function DailyEntries({ scopeId }) {
 }
 
 // Always-visible quick entry: type/pick customer, type amount, press Enter.
-// Saves and returns focus to the customer field for the next entry.
 function QuickEntry({ scopeId, onSaved }) {
   const { session } = useSession()
+  const today = todayIST()
+  const yesterday = dateShiftIST(1)
+
   const [search, setSearch] = useState('')
   const [results, setResults] = useState([])
   const [customer, setCustomer] = useState(null)
@@ -69,20 +113,16 @@ function QuickEntry({ scopeId, onSaved }) {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState(null)
   const [allCustomers, setAllCustomers] = useState([])
-  const todayIST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date())
-  const [entryDate, setEntryDate] = useState(todayIST)
+  const [entryDate, setEntryDate] = useState(today)
   const nameRef = useRef(null)
   const amountRef = useRef(null)
 
-  // Load the customer list once, then filter locally so suggestions appear
-  // instantly on every keystroke.
   useEffect(() => { api.customers({ memberId: scopeId }).then(setAllCustomers).catch(() => {}) }, [scopeId])
 
   useEffect(() => {
     const q = search.trim().toLowerCase()
     if (customer || !q) { setResults([]); return }
     const matches = allCustomers.filter((c) => c.name.toLowerCase().includes(q))
-    // Names that START with the typed text come first.
     matches.sort((a, b) => {
       const as = a.name.toLowerCase().startsWith(q) ? 0 : 1
       const bs = b.name.toLowerCase().startsWith(q) ? 0 : 1
@@ -92,25 +132,18 @@ function QuickEntry({ scopeId, onSaved }) {
   }, [search, customer, allCustomers])
 
   const pick = async (c) => {
-    setCustomer(c)
-    setSearch(c.name)
-    setResults([])
-    setLoanId('')
+    setCustomer(c); setSearch(c.name); setResults([]); setLoanId('')
     try {
       const active = await api.loans(c.id, 'active')
       setLoans(active)
-      if (active.length === 1) {
-        setLoanId(active[0].id)
-        setTimeout(() => amountRef.current?.focus(), 0)
-      }
-      // if >1, wait for the person to choose a loan below
+      if (active.length === 1) { setLoanId(active[0].id); setTimeout(() => amountRef.current?.focus(), 0) }
     } catch { setLoans([]) }
   }
 
   const reset = () => { setCustomer(null); setSearch(''); setResults([]); setAmount(''); setLoans([]); setLoanId('') }
 
   const save = async () => {
-    if (saving) return // guard against double Enter / double tap
+    if (saving) return
     setMsg(null)
     if (!customer) { setMsg('Pick a customer from the list'); return }
     if (loans.length === 0) { setMsg('This customer has no active loan'); return }
@@ -120,7 +153,7 @@ function QuickEntry({ scopeId, onSaved }) {
     setSaving(true)
     try {
       await api.createEntry({ loan_id: loanId, customer_id: customer.id, member_id: session.id, amount: amt, entry_date: entryDate })
-      setMsg(`Saved ₹${fmt(amt)} for ${customer.name}${entryDate !== todayIST ? ` on ${entryDate}` : ''}`)
+      setMsg(`Saved ₹${fmt(amt)} for ${customer.name}${entryDate !== today ? ` on ${entryDate}` : ''}`)
       reset()
       onSaved?.()
       setTimeout(() => nameRef.current?.focus(), 0)
@@ -131,34 +164,23 @@ function QuickEntry({ scopeId, onSaved }) {
     }
   }
 
-  const onAmountKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }
-
-  const dateShift = (n) => {
-    const [y, m, dd] = todayIST.split('-').map(Number)
-    const dt = new Date(Date.UTC(y, m - 1, dd))
-    dt.setUTCDate(dt.getUTCDate() - n)
-    return dt.toISOString().slice(0, 10)
-  }
-  const yesterday = dateShift(1)
-
   return (
     <div className="card p-3 mb-3">
-      {/* Date — default today, can pick a past day */}
+      {/* Entry date — separate from view date above */}
       <div className="flex items-center gap-2 mb-2 flex-wrap">
-        <span className="text-xs font-medium text-slate-500">Date:</span>
-        {[{ l: 'Today', v: todayIST }, { l: 'Yesterday', v: yesterday }].map((o) => (
+        <span className="text-xs font-medium text-slate-500">Add for:</span>
+        {[{ l: 'Today', v: today }, { l: 'Yesterday', v: yesterday }].map((o) => (
           <button key={o.v} type="button" onClick={() => setEntryDate(o.v)}
             className={`rounded-lg px-2.5 py-1 text-xs font-semibold border ${
               entryDate === o.v ? 'bg-money-in text-white border-money-in' : 'bg-white text-slate-500 border-slate-200'
             }`}>{o.l}</button>
         ))}
-        <input type="date" max={todayIST} value={entryDate}
-          onChange={(e) => setEntryDate(e.target.value || todayIST)}
+        <input type="date" max={today} value={entryDate}
+          onChange={(e) => setEntryDate(e.target.value || today)}
           className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600" />
-        {entryDate !== todayIST && <span className="text-[11px] text-amber-600 font-semibold">Back-dated</span>}
+        {entryDate !== today && <span className="text-[11px] text-amber-600 font-semibold">Back-dated</span>}
       </div>
 
-      {/* Name + amount on one line */}
       <div className="flex items-stretch gap-2">
         <div className="relative flex-1 min-w-0">
           <input
@@ -185,7 +207,7 @@ function QuickEntry({ scopeId, onSaved }) {
             ref={amountRef}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            onKeyDown={onAmountKey}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); save() } }}
             inputMode="decimal"
             placeholder="Amount"
             className="w-full py-3 outline-none bg-transparent text-lg font-semibold min-w-0"
@@ -199,7 +221,6 @@ function QuickEntry({ scopeId, onSaved }) {
         </button>
       </div>
 
-      {/* Loan picker — only when the customer has more than one active loan */}
       {customer && loans.length > 1 && (
         <div className="mt-2">
           <p className="text-xs font-medium text-slate-500 mb-1 px-1">Which loan?</p>

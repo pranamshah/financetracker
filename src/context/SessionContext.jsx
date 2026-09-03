@@ -1,37 +1,31 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { api } from '../lib/api.js'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 
 const SessionContext = createContext(null)
-const KEY = 'ft_session'
+const INACTIVITY_MS = 2 * 60 * 60 * 1000 // 2 hours
 
 export function SessionProvider({ children }) {
-  const [session, setSession] = useState(() => {
-    try {
-      const raw = localStorage.getItem(KEY)
-      return raw ? JSON.parse(raw) : null
-    } catch {
-      return null
+  // Always start logged out — PIN required on every app open.
+  const [session, setSession] = useState(null)
+  const timerRef = useRef(null)
+
+  const clearTimer = () => { if (timerRef.current) clearTimeout(timerRef.current) }
+
+  const resetTimer = () => {
+    clearTimer()
+    timerRef.current = setTimeout(() => setSession(null), INACTIVITY_MS)
+  }
+
+  // Reset inactivity timer on any user interaction while logged in.
+  useEffect(() => {
+    if (!session) { clearTimer(); return }
+    resetTimer()
+    const events = ['pointerdown', 'keydown', 'touchstart', 'scroll']
+    events.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }))
+    return () => {
+      clearTimer()
+      events.forEach((e) => window.removeEventListener(e, resetTimer))
     }
-  })
-
-  useEffect(() => {
-    if (session) localStorage.setItem(KEY, JSON.stringify(session))
-    else localStorage.removeItem(KEY)
   }, [session])
-
-  // Self-heal after a database change: if the stored member id no longer
-  // exists in the current database, log out so the person signs in again and
-  // gets a valid id (prevents foreign-key errors when saving).
-  useEffect(() => {
-    if (!session) return
-    api.members()
-      .then((list) => {
-        if (Array.isArray(list) && list.length && !list.some((m) => m.id === session.id)) {
-          setSession(null)
-        }
-      })
-      .catch(() => {}) // network hiccup: keep the session
-  }, []) // once on load
 
   const login = (member) =>
     setSession({ id: member.id, name: member.name, role: member.role })
