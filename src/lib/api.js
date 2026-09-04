@@ -54,6 +54,13 @@ export const api = {
     return req(`summary?${p.toString()}`)
   },
 
+  alerts: ({ date, memberId } = {}) => {
+    const p = new URLSearchParams()
+    if (date) p.set('date', date)
+    if (memberId) p.set('member_id', memberId)
+    return req(`alerts?${p.toString()}`)
+  },
+
   report: ({ range = 'today', memberId, group = 'day', from, to } = {}) => {
     const p = new URLSearchParams({ range, group })
     if (memberId) p.set('member_id', memberId)

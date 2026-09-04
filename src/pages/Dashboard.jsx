@@ -9,13 +9,15 @@ import Customers from './tabs/Customers.jsx'
 import NewTab from './tabs/NewTab.jsx'
 import Summary from './tabs/Summary.jsx'
 import Members from './tabs/Members.jsx'
+import Alerts from './tabs/Alerts.jsx'
 
-// Non-admins get 4 tabs; admin gets an extra "People" overview.
+// Non-admins get 5 tabs; admin gets an extra "People" overview.
 const STAFF_TABS = [
   { key: 'entries', label: 'Entries' },
   { key: 'customers', label: 'Customers' },
   { key: 'new', label: 'New' },
-  { key: 'summary', label: 'Summary' }
+  { key: 'summary', label: 'Summary' },
+  { key: 'alerts', label: 'Alerts' }
 ]
 const ADMIN_TABS = [
   { key: 'members', label: 'People' },
@@ -45,7 +47,7 @@ export default function Dashboard() {
 
   const filterName = filter ? members.find((m) => m.id === filter)?.name : null
   const titles = {
-    members: 'People', entries: 'Daily Entries', customers: 'Customers', new: 'New', summary: 'Summary'
+    members: 'People', entries: 'Daily Entries', customers: 'Customers', new: 'New', summary: 'Summary', alerts: 'Alerts'
   }
 
   return (
@@ -85,6 +87,7 @@ export default function Dashboard() {
         {tab === 'customers' && <Customers scopeId={scopeId} isAdmin={isAdmin} />}
         {tab === 'new' && <NewTab onDone={() => setTab('customers')} />}
         {tab === 'summary' && <Summary scopeId={scopeId} isAdmin={isAdmin} />}
+        {tab === 'alerts' && <Alerts scopeId={scopeId} />}
       </main>
 
       <BottomNav tabs={tabs} tab={tab} setTab={setTab} />
